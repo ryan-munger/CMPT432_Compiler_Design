@@ -1,15 +1,15 @@
-# CMPT432_Compiler_Design
+# Gopiler by Ryan Munger
 
 Dear Alan: grade the main branch
 
 
-# Running the Compiler
+# Running Mr. Gopiler
 1. Get GoLang from your package manager or their website.
 1. Ensure `go version` works.
 1. The following commands are to be run from the project directory. I will be using the standardized GoLang project structure. 
-1. To compile and run: `go run ./cmd/compiler/ -f <filename>` 
+1. **To compile and run (recommended):** `go run ./cmd/compiler/ -f <filename>` 
     1. Currently, the -f arg is just how I will take in the filename to compile.
-1. To compile an executable to run:
+1. To compile an executable to run yourself:
     1. Linux: `go build -o ./bin/compiler ./cmd/compiler`
         1. Then: `./bin/compiler -f <filename>`
     1. Windows: `go build -o ./bin/compiler.exe ./cmd/compiler`

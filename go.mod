@@ -1,3 +1,3 @@
-module github.com/ryan-munger/compiler
+module gopiler
 
 go 1.23.5

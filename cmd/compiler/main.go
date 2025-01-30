@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"gopiler/internal/lexer"
 )
 
 func main() {
@@ -19,5 +20,7 @@ func main() {
 
 	// omg we compiled! no need for the rest of the semester
 	fmt.Printf("Compiling file: %s\n", *inputFile)
+
+	lexer.Test()
 }
 
