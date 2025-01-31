@@ -1,0 +1,40 @@
+{
+    /* given a and b print in order (the bigger one first) */
+    int a
+    int b
+    int c
+    int f
+    boolean d
+    boolean e
+    a = 1
+    b = 9
+    /* temps to keep track of adding */
+    c = a
+    f = b 
+    /* flag to continue while */
+    d = true
+    /* a is bigger */
+    e = true
+    while (d == true) {
+        if (c == b) {
+            e = false
+            d = false
+        }
+        if (f == a) {
+            d = false
+        }
+        c = 1 + c
+        f = 1 + f
+    }
+    if (e == true) {
+        print(a)
+        print(b)
+    }
+
+    if (e == false) {
+        print(b)
+        print(a)
+    }
+}$
+
+

@@ -1,0 +1,45 @@
+{/*this caused my compiler to go into an infinite loop*/
+    {}
+    {int astringb}
+    {
+    print(a)print(2)print(0+1)print(false)print(true)print("test")print((a==b))print((a!="tes t"))
+    a = aa=bb=bb=1b=1+bb="te st"b=""b=falseb=true
+    while true{
+    if (5+a=="test"){
+    
+    }
+    }
+    
+    }
+    }$
+
+/* Tricky Declarations */
+{
+	int x
+	int y = x
+	z = x + y
+}$
+
+/* Bool Declaration */
+{
+	boolean x
+	boolean y
+	 while (x != y){}
+	 if (true != false)
+}$
+
+/* This is a valid parse... hmm... */
+{
+    a = 1 + (true == false)
+}$
+/* This is a valid parse as well.. */
+{
+    a = 1 + "hmmmmmmmm"
+}$
+
+/* This is theoretically correct.. I'll be damned if my computer doesn't blow up from this. */
+{
+	if( (((true != false) == (false == true)) == false) != true ){
+		 print("wow")
+	}
+}$

@@ -1,0 +1,18 @@
+{
+    int a
+    a =1
+    {
+        int a
+        a = 2
+        print(a)
+    }
+    string b
+    b = "alan"
+    if (a == 1) {
+        print(b)
+    }
+    string c
+    c = "james"
+    b = "blackstone"
+    print(b)
+}$

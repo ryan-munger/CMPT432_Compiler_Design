@@ -1,0 +1,19 @@
+{
+    boolean a
+    boolean b
+    a = true
+    b = false
+
+    if (a == a) {
+        print("a")
+    }
+    if (a == b) {
+        print("b")
+    }
+    if (b == a) {
+        print("c")
+    }
+    if (b == b) {
+        print("d")
+    }
+}$

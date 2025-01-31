@@ -1,0 +1,20 @@
+{
+    if (true == true) {
+        print("a")
+    }
+    if (true == false) {
+        print("b")
+    }
+    if (false == true) {
+        print("c")
+    }
+    if (false == false) {
+        print("d")
+    }
+    if true {
+        print("e")
+    }
+    if false {
+        print("f")
+    }
+}$

@@ -1,0 +1,47 @@
+{
+    int b
+    int c
+    int c
+    a = 1
+    b = 2
+    c = 3
+    {
+        int a
+        int b
+        b = 3
+        {
+            a = 3
+            print(a)
+            print(b)
+            print(c)
+        }
+        {
+            int d
+            int e
+            d = 1
+            e = 1
+            print(d)
+            print(e)
+        }
+        print(a)
+        print(b)
+        print(c)
+    }
+    int b
+    print(a)
+    print(b)
+    print(c)
+    {
+        int d
+
+        print(a)
+        print(b)
+        print(c)
+        print(d)
+        {
+            int e
+            e = 1
+            print(e)
+        }
+    }
+}$

@@ -1,0 +1,14 @@
+{
+    print(5)
+    print(false)
+    print("hi")
+    int a
+    a = 5
+    print(a)
+    boolean b
+    b = true
+    print(b)
+    string c
+    c = "hi"
+    print(c)
+}$

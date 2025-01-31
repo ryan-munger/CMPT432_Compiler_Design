@@ -1,0 +1,7 @@
+/* This should fail */
+{
+	boolean x
+	boolean y
+	 while (x != y){}
+	 if ((true != false))
+}$

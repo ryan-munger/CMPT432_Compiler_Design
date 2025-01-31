@@ -1,0 +1,32 @@
+{
+    int a
+    int b
+    a = 1
+    b = 2
+    while(a == (b == (2 == (3 == false)))) {
+    }
+    {
+        string a
+        boolean b
+        a = "hi"
+        b = false
+        print((a == b))
+    }
+    {
+        int a
+        string b
+        boolean c
+        {
+            a = 1
+            {
+                b = "hi"
+                {
+                    c = false
+                }
+            }
+        }
+        a = "hi"
+        b = false
+        c = 1
+    }
+}$

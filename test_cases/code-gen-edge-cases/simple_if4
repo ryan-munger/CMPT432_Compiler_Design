@@ -1,0 +1,17 @@
+{
+    boolean a
+    a = false
+
+    if (a == true) {
+        print("a")
+    }
+    if (a == false) {
+        print("b")
+    }
+    if (true == a) {
+        print("c")
+    }
+    if (false == a) {
+        print("d")
+    }
+}$

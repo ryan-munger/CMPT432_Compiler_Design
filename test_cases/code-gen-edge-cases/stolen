@@ -1,0 +1,106 @@
+{
+print(true)
+print(false)
+print(0)
+print(7)
+print("hello")
+print(" ")
+print("world")
+print("")
+print("end")
+}$
+
+{
+    /* output: true 3 6*/
+print((2 == 2))
+print(1+2)
+print(0+1+2+3)
+}$
+
+{
+    /* output: false true false*/
+    print((2 == 1))
+    print((3 != 2))
+    print ((0 != 0))
+}$
+
+{
+    /*output true false)*/
+    print ((true == true))
+    print ((false != false))
+}$
+
+{
+    print(("true" == "true"))
+    print(("true" != "false"))
+}$
+
+{
+int a
+boolean b
+string c
+
+a = 9
+b = true
+c = "hello world"
+/*output: 9 true hello world*/
+print(a)
+print(b)
+print(c)
+}$
+
+{
+int a
+boolean b
+
+a = 2+3+4
+b = (2 == 2)
+/*output: 9 true)*/
+print(a)
+print(b)
+}$
+
+
+{
+int a
+a = 1
+int b
+b = 3
+a = 2+3+a
+/*output: 6*/
+print(a)
+b = 3+a
+/*output: 9 */
+print(b)
+}$
+
+{
+int a
+a=1
+int b 
+b=2
+{   
+    int a
+    a = 2
+    b = 4
+    {
+        int a 
+        a = 3
+        print(b)
+        print(a)
+    }
+    print(a)
+}
+print(a)
+
+}$
+
+{
+int x
+x = 1
+while true {
+    x = 1+x
+    print(x)
+}
+print("ended")
+}$

@@ -1,0 +1,28 @@
+{
+    z = "bond"
+    while(a != 9){
+        if(a != 5){
+            print("bond")
+        }
+        {
+            a = 1 + a
+            string b
+            b = "james bond"
+            print(b)
+        }
+    }
+    {}
+    boolean d
+    d = (true == (true == false))
+    d = (a == b)
+    d = (1 == a)
+    d = (1 != 1)
+    d = ("string" == 1)
+    d = (a != "string")
+    d = ("string" != "string")
+    while ("string" == a) {
+        while (1 == true) {
+            a = 1 + "string"
+        }
+    }
+}$

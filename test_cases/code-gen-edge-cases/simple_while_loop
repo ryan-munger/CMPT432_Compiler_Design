@@ -1,0 +1,9 @@
+{
+    boolean a
+    a = true
+    while (a == true) {
+
+    }
+
+    boolea b
+}$

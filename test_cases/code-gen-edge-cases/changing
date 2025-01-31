@@ -1,0 +1,29 @@
+{
+    string a
+    a = "hi"
+    string b
+    b = a
+    string c
+    c = "hi"
+
+    if (a == b) {
+        print("a is b ")
+    }
+
+    if (a == c) {
+        print("a is c ")
+    }
+
+    if (a == "hi") {
+        print("a is hi ")
+    }
+
+    if (a == "b") {
+        print("wrong")
+    }
+
+    if ("hi" == "hi") {
+        print("hi is hi")
+    }
+}$
+

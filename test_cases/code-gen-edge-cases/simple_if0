@@ -1,0 +1,8 @@
+{
+    if true {
+        print("a")
+    }
+    if false {
+        print("b")
+    }
+}$

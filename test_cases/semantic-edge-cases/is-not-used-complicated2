@@ -1,0 +1,38 @@
+{
+    /* only c should be unused */
+
+    /* 
+        Some value of a is not used but since some is used I think this is OK
+    */
+    int a
+    int b
+    a = 3
+    b = a
+    a = 4
+    print(b)
+    /*
+        In this case e is not used with c's value so c should be unused
+    */
+    int c
+    int d
+    int e
+    c = 1
+    d = 1
+    e = c
+    e = d
+    print(e)
+
+    /*
+        In this case f is used because h is used after f,
+        this is why propgation must happen after each variable use
+    */
+    int f
+    int g
+    int h
+    f = 1
+    g = 1
+    h = f
+    print(h)
+    h = g
+    print(h)
+}$

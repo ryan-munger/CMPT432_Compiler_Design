@@ -1,0 +1,11 @@
+{
+    boolean a
+    boolean b
+    boolean c
+    a = true
+    b = false
+    c = false
+    a = ( a == (b != (c == a)) )
+    b = ( a == (b != (c == a)) )
+    c = ( a == (b != (c == a)) )
+}$

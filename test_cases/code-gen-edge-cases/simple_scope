@@ -1,0 +1,10 @@
+{
+    int a
+    a = 5
+    {
+        int a
+        a = 4
+        print(a)
+    }
+    print(a)
+}

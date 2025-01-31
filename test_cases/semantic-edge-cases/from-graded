@@ -1,0 +1,45 @@
+{
+    print("")
+    {}
+    int a
+    a = 0
+    a = 3 + a
+    int b
+    b = 8
+    {
+        {
+            print("inta is not int a")
+            print(1+2+3+4+5+3+2+1)
+            print(a)
+        }
+        int a
+        a = 7
+        string b
+        b = "one string"
+        print(b)
+    }
+}$
+
+{
+   int a 
+   int b
+   string s
+   boolean z
+   z = true
+   s="dammit janet"
+   a=0
+   b=0
+   /* while loop */
+   while(a != 3) {
+       print(a)
+       while(b != 3) {
+           print(b)
+           b = 1 + b
+           if(b == 2) {
+               print("dammit janet")
+           }
+       }
+       b=0
+       a=1+a
+   }
+}
