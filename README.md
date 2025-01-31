@@ -1,6 +1,6 @@
 # Gopiler by Ryan Munger
 
-Dear Alan: grade the main branch
+Dear Alan: grade the main branch -- I will likely use feature branches.
 
 
 # Running Mr. Gopiler
@@ -10,6 +10,7 @@ Dear Alan: grade the main branch
 1. **To compile and run (recommended):** `go run ./cmd/compiler/ -f <filename>` 
     1. Currently, the -f arg is just how I will take in the filename to compile.
 1. To compile an executable to run yourself:
+    1. You can create a bin folder. Or be messy if you want.
     1. Linux: `go build -o ./bin/compiler ./cmd/compiler`
         1. Then: `./bin/compiler -f <filename>`
     1. Windows: `go build -o ./bin/compiler.exe ./cmd/compiler`
