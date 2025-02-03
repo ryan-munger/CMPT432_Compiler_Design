@@ -13,7 +13,7 @@ const (
 	Keyword    TokenType = "keyword"
 	Identifier TokenType = "identifier"
 	Symbol     TokenType = "symbol"
-	Digits     TokenType = "digits"
+	Digit      TokenType = "digit"
 	Character  TokenType = "character"
 )
 

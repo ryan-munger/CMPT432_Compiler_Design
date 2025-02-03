@@ -3,22 +3,16 @@ package internal
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"unicode"
 )
 
-func isNumber(s string) bool {
-	for _, c := range s {
-		if !unicode.IsDigit(c) {
-			return false
-		}
-	}
-	return true
-}
+var keywordRe = regexp.MustCompile(`^(boolean|string|print|while|false|true|int|if|[a-z]|\d)\S*$`)
 
-var keywordRe = regexp.MustCompile(`^(boolean|string|print|while|false|true|int|if|[a-z]{1}|\d+)\S*$`)
-
-func nextProgram(programNum *int) {
+func nextProgram(programNum *int, tokenStream *[][]Token) {
 	*programNum++ // deref to update it
+	// add another array for the next program's tokens
+	*tokenStream = append(*tokenStream, []Token{})
 	Log(fmt.Sprintf("Lexing program %d", *programNum), "LEXER", true)
 }
 
@@ -39,6 +33,7 @@ func evaluateCollection(collection []rune) string {
 	if match != nil {
 		return match[1]
 	}
+	// fmt.Println(string(collection))
 	return "NOMATCH"
 }
 
@@ -47,15 +42,26 @@ func tokenize(capture string, line int, pos int) Token {
 	switch capture {
 	case "print", "while", "false", "true", "if":
 		tokenType = Keyword
-	case "string", "int":
+		Debug(fmt.Sprintf("%s [ %s ] found at (%d:%d)", strings.ToUpper(capture), capture, line, pos), "LEXER")
+
+	case "string":
 		tokenType = Identifier
+		Debug(fmt.Sprintf("S_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+
+	case "int":
+		tokenType = Identifier
+		Debug(fmt.Sprintf("I_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+
 	default:
 		if len(capture) == 1 && isSymbol(rune(capture[0])) {
 			tokenType = Symbol
-		} else if isNumber(capture) {
-			tokenType = Digits
+			Debug(fmt.Sprintf("%s [ %s ] found at (%d:%d)", SymbolMap[rune(capture[0])], capture, line, pos), "LEXER")
+		} else if unicode.IsDigit(rune(capture[0])) {
+			tokenType = Digit
+			Debug(fmt.Sprintf("DIGIT [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
 		} else {
 			tokenType = Character
+			Debug(fmt.Sprintf("ID [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
 		}
 	}
 
@@ -80,7 +86,7 @@ func Lex(filedata string) {
 	var tokenStream [][]Token
 	// careful: indexed from 0 but programs from 1
 	// this is NOT an array: it is a 'slice' (dynamically allocated)
-	nextProgram(&programNum)
+	nextProgram(&programNum, &tokenStream)
 
 	var currentPos int = 0
 	var lastPos int = 0
@@ -88,31 +94,56 @@ func Lex(filedata string) {
 	var liveRune rune // char
 	var collection []rune
 	var greedyCapture string
+	var newToken Token
+	var deadPos = 0 // count chars from past lines
 
 	// extract tokens
-	for currentPos < len(codeRunes) {
+	for lastPos < len(codeRunes) {
 		liveRune = codeRunes[currentPos]
 
 		if isSymbol(liveRune) {
 			if len(collection) == 0 { // found a symbol to tokenize directly
-				Debug(fmt.Sprintf("%s [ %c ] found at (%d:%d)", SymbolMap[liveRune], liveRune, line, currentPos+1), "LEXER")
-				tokenStream[programNum-1] = append(tokenStream[programNum-1], tokenize(greedyCapture, line, lastPos))
-
+				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1)
+			} else {
+				greedyCapture = evaluateCollection(collection) // hit a symbol, check what we have
+				newToken = tokenize(greedyCapture, line, lastPos-deadPos)
 			}
+
+			lastPos += len(newToken.content) // find the offset based on chars taken
+			tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
 			if liveRune == '$' {
-				nextProgram(&programNum)
+				nextProgram(&programNum, &tokenStream)
 			}
-			greedyCapture = evaluateCollection(collection)
-			tokenStream[programNum-1] = append(tokenStream[programNum-1], tokenize(greedyCapture, line, lastPos))
+			collection = []rune{}    // release old contents
+			currentPos = lastPos - 1 // we increment later
+
 		} else if unicode.IsSpace(liveRune) {
-			greedyCapture = evaluateCollection(collection)
-			tokenStream[programNum-1] = append(tokenStream[programNum-1], tokenize(greedyCapture, line, lastPos))
-		} else if liveRune == '\n' {
-			line++
+			if len(collection) > 0 { // handle repeating spaces
+				greedyCapture = evaluateCollection(collection)
+				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1)
+				lastPos += len(newToken.content) // find the offset based on chars taken
+				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+
+				collection = []rune{}
+				currentPos = lastPos - 1
+			} else {
+				lastPos += 1 // move past whitespace
+			}
+
+			if liveRune == '\n' {
+				line++
+				deadPos = lastPos
+			}
+		} else if currentPos >= len(codeRunes) {
+			fmt.Printf("hit the back")
+			break
 		} else {
 			collection = append(collection, liveRune) // add to back
 		}
+
 		currentPos++
 	}
+
+	fmt.Printf("done")
 }
