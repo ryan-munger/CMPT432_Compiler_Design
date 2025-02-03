@@ -31,8 +31,9 @@ func main() {
 	flag.Parse()
 
 	var filedata string = verifyFile(*inputFile)
+	internal.SetVerbose(*verboseMode)
 
-	internal.Log(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t\n", *inputFile, *verboseMode))
+	internal.Log(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, *verboseMode), "GOPILER", true)
 
 	internal.Lex(filedata)
 }
