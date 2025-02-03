@@ -3,26 +3,36 @@ package main
 import (
 	"flag"
 	"fmt"
+	"gopiler/internal"
 	"os"
-	"gopiler/internal/lexer"
 )
+
+func verifyFile(inputFile string) string {
+	// Ensure we got a file
+	if inputFile == "" {
+		fmt.Println("Error: No input file specified.")
+		flag.Usage()
+		os.Exit(1)
+	}
+	filebytes, err := os.ReadFile(inputFile)
+	if err != nil {
+		fmt.Println("Error processing file:", err)
+		os.Exit(1)
+	}
+	var filedata string = string(filebytes)
+	// fmt.Println("File contents:")
+	// fmt.Println(string(filedata))
+	return filedata
+}
 
 func main() {
 	inputFile := flag.String("f", "", "Path to source for compilation")
 	verboseMode := flag.Bool("v", false, "Toggle Verbose Mode")
 	flag.Parse()
 
-	// Ensure we got a file
-	if *inputFile == "" {
-		fmt.Println("Error: No input file specified.")
-		flag.Usage()
-		os.Exit(1)
-	}
+	var filedata string = verifyFile(*inputFile)
 
-	// omg we compiled! no need for the rest of the semester
-	fmt.Printf("Compiling file: %s\n", *inputFile)
-	fmt.Printf("Verbose mode: %t\n", *verboseMode)
+	internal.Log(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t\n", *inputFile, *verboseMode))
 
-	lexer.Test()
+	internal.Lex(filedata)
 }
-

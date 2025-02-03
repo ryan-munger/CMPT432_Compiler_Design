@@ -11,6 +11,7 @@ Dear Alan: grade the main branch -- I will likely use feature branches.
     1. Currently, the -f arg is just how I will take in the filename to compile.
     1. -v toggles verbose mode to true (to see detailed output).
     1. As always, -h or -help will provide this information.
+    1. `go run` automatically handles any needed packages or dependencies. 
 1. To compile an executable to run yourself:
     1. You can create a bin folder. Or be messy if you want.
     1. Linux: `go build -o ./bin/compiler ./cmd/compiler`
