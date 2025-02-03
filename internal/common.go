@@ -6,8 +6,16 @@ import (
 	"github.com/fatih/color"
 )
 
+type Location struct {
+	line     int
+	startPos int
+	endPos   int
+}
+
 type Token struct {
-	location string
+	tokenType string
+	location  Location
+	content   string
 }
 
 // capitalized = export
