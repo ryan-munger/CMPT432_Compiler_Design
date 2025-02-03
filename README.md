@@ -7,8 +7,10 @@ Dear Alan: grade the main branch -- I will likely use feature branches.
 1. Get GoLang from your package manager or their website.
 1. Ensure `go version` works.
 1. The following commands are to be run from the project directory. I will be using the standardized GoLang project structure. 
-1. **To compile and run (recommended):** `go run ./cmd/compiler/ -f <filename>` 
+1. **To compile and run (recommended):** `go run ./cmd/compiler/ -v -f <filename>` 
     1. Currently, the -f arg is just how I will take in the filename to compile.
+    1. -v toggles verbose mode to true (to see detailed output).
+    1. As always, -h or -help will provide this information.
 1. To compile an executable to run yourself:
     1. You can create a bin folder. Or be messy if you want.
     1. Linux: `go build -o ./bin/compiler ./cmd/compiler`
