@@ -39,3 +39,12 @@ func Success(msg string) {
 func Debug(msg string) {
 	color.Blue(msg)
 }
+
+var SymbolMap = map[rune]string{
+	'{': "OPEN_BRACE",
+	'}': "CLOSE_BRACE",
+	'(': "OPEN_PAREN",
+	')': "CLOSE_PAREN",
+	'$': "EOPS",
+	'=': "ASSIGN_OP",
+}
