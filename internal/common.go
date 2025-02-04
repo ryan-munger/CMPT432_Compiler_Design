@@ -36,11 +36,11 @@ func SetVerbose(toggle bool) {
 
 // capitalized = export
 // lowercase = internal
-func Log(msg string, component string, space bool) {
+func Info(msg string, component string, space bool) {
 	if space {
-		fmt.Printf("\n%-5s | %s --> %s\n", "LOG", component, msg)
+		fmt.Printf("\n%-5s | %s --> %s\n", "INFO", component, msg)
 	} else {
-		fmt.Printf("%-5s | %s --> %s\n", "LOG", component, msg)
+		fmt.Printf("%-5s | %s --> %s\n", "INFO", component, msg)
 	}
 }
 

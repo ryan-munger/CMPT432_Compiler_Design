@@ -33,7 +33,10 @@ func main() {
 	var filedata string = verifyFile(*inputFile)
 	internal.SetVerbose(*verboseMode)
 
-	internal.Log(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, *verboseMode), "GOPILER", true)
+	internal.Info(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, *verboseMode), "GOPILER", true)
 
 	internal.Lex(filedata)
+
+	internal.Info("All compilations complete.", "GOPILER", true)
+
 }

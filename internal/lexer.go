@@ -13,7 +13,17 @@ func nextProgram(programNum *int, tokenStream *[][]Token) {
 	*programNum++ // deref to update it
 	// add another array for the next program's tokens
 	*tokenStream = append(*tokenStream, []Token{})
-	Log(fmt.Sprintf("Lexing program %d", *programNum), "LEXER", true)
+	Info(fmt.Sprintf("Lexing program %d", *programNum), "LEXER", true)
+}
+
+// do we have another program after $? or just some whitespace
+func nextProgramExists(codeRunes []rune, pos int) bool {
+	for i := pos + 1; i < len(codeRunes); i++ {
+		if !unicode.IsSpace(codeRunes[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 func isSymbol(candidate rune) bool {
@@ -95,7 +105,8 @@ func Lex(filedata string) {
 	var collection []rune
 	var greedyCapture string
 	var newToken Token
-	var deadPos = 0 // count chars from past lines
+	var deadPos int = 0 // count chars from past lines
+	var warningCount int = 0
 
 	// extract tokens
 	for lastPos < len(codeRunes) {
@@ -113,8 +124,14 @@ func Lex(filedata string) {
 			tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
 			if liveRune == '$' {
-				nextProgram(&programNum, &tokenStream)
+				Info(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
+					programNum, warningCount, len(tokenStream[programNum-1])), "LEXER", false)
+
+				if nextProgramExists(codeRunes, currentPos) {
+					nextProgram(&programNum, &tokenStream)
+				}
 			}
+
 			collection = []rune{}    // release old contents
 			currentPos = lastPos - 1 // we increment later
 
@@ -127,14 +144,14 @@ func Lex(filedata string) {
 
 				collection = []rune{}
 				currentPos = lastPos - 1
+			} else if liveRune == '\n' {
+				line++
+				lastPos++
+				deadPos = lastPos
 			} else {
-				lastPos += 1 // move past whitespace
+				lastPos++ // move past whitespace
 			}
 
-			if liveRune == '\n' {
-				line++
-				deadPos = lastPos
-			}
 		} else if currentPos >= len(codeRunes) {
 			fmt.Printf("hit the back")
 			break
@@ -144,6 +161,4 @@ func Lex(filedata string) {
 
 		currentPos++
 	}
-
-	fmt.Printf("done")
 }
