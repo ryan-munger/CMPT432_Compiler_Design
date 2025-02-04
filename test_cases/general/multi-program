@@ -8,3 +8,8 @@
     b = 2
     print(b)
 }$
+{
+    string c
+    c = "hello"
+    print(c)
+}$

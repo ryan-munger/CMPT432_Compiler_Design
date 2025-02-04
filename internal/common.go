@@ -6,28 +6,6 @@ import (
 	"github.com/fatih/color"
 )
 
-// constrain tokentypes to the 5 values
-type TokenType string
-
-const (
-	Keyword    TokenType = "keyword"
-	Identifier TokenType = "identifier"
-	Symbol     TokenType = "symbol"
-	Digit      TokenType = "digit"
-	Character  TokenType = "character"
-)
-
-type Location struct {
-	line     int
-	startPos int
-}
-
-type Token struct {
-	tType    TokenType
-	location Location
-	content  string
-}
-
 var Verbose bool
 
 func SetVerbose(toggle bool) {
@@ -62,13 +40,4 @@ func Debug(msg string, component string) {
 	if Verbose {
 		color.Blue(fmt.Sprintf("%-5s | %s --> %s\n", "DEBUG", component, msg))
 	}
-}
-
-var SymbolMap = map[rune]string{
-	'{': "OPEN_BRACE",
-	'}': "CLOSE_BRACE",
-	'(': "OPEN_PAREN",
-	')': "CLOSE_PAREN",
-	'$': "EOPS",
-	'=': "ASSIGN_OP",
 }
