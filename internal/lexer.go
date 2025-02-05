@@ -62,6 +62,14 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 		tokenType = Keyword
 		Debug(fmt.Sprintf("I_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
 
+	case "==":
+		tokenType = Symbol
+		Debug(fmt.Sprintf("EQUAL_OP [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+
+	case "!=":
+		tokenType = Symbol
+		Debug(fmt.Sprintf("N-EQUAL_OP [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+
 	default:
 		if len(capture) == 1 && isSymbol(rune(capture[0])) {
 			tokenType = Symbol
@@ -112,6 +120,7 @@ func Lex(filedata string) {
 	var newToken Token
 	var deadPos int = 0 // count chars from past lines
 	var warningCount int = 0
+	var errorCount int = 0
 	var quoteFlag bool = false
 
 	// extract tokens
@@ -119,34 +128,51 @@ func Lex(filedata string) {
 		liveRune = codeRunes[currentPos]
 
 		if quoteFlag && liveRune != '"' {
-			newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
+			if !(liveRune >= 'a' && liveRune <= 'z' || liveRune == ' ') {
+				Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
+				errorCount++
+			} else {
+				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
+				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+			}
 			lastPos++
-			tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
 		} else if isSymbol(liveRune) {
 			if len(collection) == 0 { // found a symbol to tokenize directly
-				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
+				// check for ==
+				if liveRune == '=' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
+					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
+					lastPos += 2 // 2 rune symbol
+					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+
+				} else {
+					newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
+					lastPos++
+					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+
+					if liveRune == '$' {
+						if errorCount == 0 {
+							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
+								programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
+						} else {
+							Error(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
+						}
+
+						if nextProgramExists(codeRunes, currentPos) {
+							nextProgram(&programNum, &tokenStream)
+						}
+					} else if liveRune == '"' {
+						quoteFlag = !quoteFlag // flip it
+					}
+				}
 			} else {
 				greedyCapture = evaluateCollection(collection) // hit a symbol, check what we have
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
+				lastPos += len(newToken.content) // find the offset based on chars taken
+				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+				collection = []rune{} // release old contents
 			}
-
-			lastPos += len(newToken.content) // find the offset based on chars taken
-			tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
-
-			if liveRune == '$' {
-				Info(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
-					programNum, warningCount, len(tokenStream[programNum-1])), "LEXER", false)
-
-				if nextProgramExists(codeRunes, currentPos) {
-					nextProgram(&programNum, &tokenStream)
-				}
-			} else if liveRune == '"' {
-				quoteFlag = !quoteFlag // flip it
-			}
-
-			collection = []rune{}    // release old contents
-			currentPos = lastPos - 1 // we increment later
+			currentPos = lastPos - 1 // we increment it later
 
 		} else if unicode.IsSpace(liveRune) {
 			if len(collection) > 0 { // handle repeating spaces
@@ -170,7 +196,15 @@ func Lex(filedata string) {
 			break
 
 		} else {
-			collection = append(collection, liveRune) // add to back
+			// check for !=
+			if liveRune == '!' && len(collection) == 0 && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
+				newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
+				lastPos += 2 // 2 rune symbol
+				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+
+			} else {
+				collection = append(collection, liveRune) // add to back
+			}
 		}
 
 		currentPos++
