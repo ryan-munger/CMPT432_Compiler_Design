@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-var keywordRe = regexp.MustCompile(`^(boolean|string|print|while|false|true|int|if|[a-z]|\d)\S*$`)
+var tokenRe = regexp.MustCompile(`^(boolean|string|print|while|false|true|int|if|[a-z]|\d)\S*$`)
 
 func nextProgram(programNum *int, tokenStream *[][]Token) {
 	*programNum++ // deref to update it
@@ -38,12 +38,12 @@ func isSymbol(candidate rune) bool {
 	return false
 }
 
-func evaluateCollection(collection []rune) string {
-	match := keywordRe.FindStringSubmatch(string(collection))
+func evaluatetokenBuffer(tokenBuffer []rune) string {
+	// fmt.Println(string(tokenBuffer))
+	match := tokenRe.FindStringSubmatch(string(tokenBuffer))
 	if match != nil {
 		return match[1]
 	}
-	// fmt.Println(string(collection))
 	return "NOMATCH"
 }
 
@@ -115,17 +115,19 @@ func Lex(filedata string) {
 	var lastPos int = 0
 	var line int = 1  // start at 1
 	var liveRune rune // char
-	var collection []rune
+	var tokenBuffer []rune
 	var greedyCapture string
 	var newToken Token
 	var deadPos int = 0 // count chars from past lines
 	var warningCount int = 0
 	var errorCount int = 0
 	var quoteFlag bool = false
+	var commentFlag bool = false
 
 	// extract tokens
 	for lastPos < len(codeRunes) {
 		liveRune = codeRunes[currentPos]
+		// fmt.Println(string(liveRune))
 
 		if quoteFlag && liveRune != '"' {
 			if !(liveRune >= 'a' && liveRune <= 'z' || liveRune == ' ') {
@@ -137,8 +139,19 @@ func Lex(filedata string) {
 			}
 			lastPos++
 
+		} else if commentFlag {
+			// can't ignore close comment
+			if liveRune == '*' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '/' {
+				commentFlag = false
+				lastPos += 2 // close comment is 2 characters
+				currentPos++
+			} else {
+				// fmt.Println("Threw away " + string(liveRune))
+				lastPos++ // throw it away
+			}
+
 		} else if isSymbol(liveRune) {
-			if len(collection) == 0 { // found a symbol to tokenize directly
+			if len(tokenBuffer) == 0 { // found a symbol to tokenize directly
 				// check for ==
 				if liveRune == '=' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
 					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
@@ -166,22 +179,33 @@ func Lex(filedata string) {
 					}
 				}
 			} else {
-				greedyCapture = evaluateCollection(collection) // hit a symbol, check what we have
+				greedyCapture = evaluatetokenBuffer(tokenBuffer) // hit a symbol, check what we have
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
 				lastPos += len(newToken.content) // find the offset based on chars taken
-				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
-				collection = []rune{} // release old contents
+
+				if newToken.content == "/*" { // open block comment
+					commentFlag = true
+				} else {
+					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+				}
+
+				tokenBuffer = []rune{} // release old contents
 			}
 			currentPos = lastPos - 1 // we increment it later
 
 		} else if unicode.IsSpace(liveRune) {
-			if len(collection) > 0 { // handle repeating spaces
-				greedyCapture = evaluateCollection(collection)
+			if len(tokenBuffer) > 0 { // no action if buffer empty
+				greedyCapture = evaluatetokenBuffer(tokenBuffer)
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
 				lastPos += len(newToken.content) // find the offset based on chars taken
-				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
-				collection = []rune{}
+				if newToken.content == "/*" { // open block comment
+					commentFlag = true
+				} else {
+					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+				}
+
+				tokenBuffer = []rune{}
 				currentPos = lastPos - 1
 			} else if liveRune == '\n' {
 				line++
@@ -197,16 +221,25 @@ func Lex(filedata string) {
 
 		} else {
 			// check for !=
-			if liveRune == '!' && len(collection) == 0 && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
+			if liveRune == '!' && len(tokenBuffer) == 0 && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
 				newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
 				lastPos += 2 // 2 rune symbol
+				currentPos++
 				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
+				// open comment symbol - we want to keep buffer unaffected
+			} else if liveRune == '/' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '*' {
+				commentFlag = true
+				lastPos += 2 // open comment is 2 chars
+				currentPos++
 			} else {
-				collection = append(collection, liveRune) // add to back
+				tokenBuffer = append(tokenBuffer, liveRune) // add to back
 			}
 		}
 
 		currentPos++
+		if currentPos < lastPos { // ensure we never fall behind
+			currentPos = lastPos
+		}
 	}
 }
