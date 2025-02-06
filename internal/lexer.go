@@ -152,6 +152,11 @@ func Lex(filedata string) {
 				commentFlag = false
 				lastPos += 2 // close comment is 2 characters
 				currentPos++
+
+			} else if liveRune == '\n' {
+				line++
+				lastPos++
+				deadPos = lastPos
 			} else {
 				// fmt.Println("Threw away " + string(liveRune))
 				lastPos++ // throw it away
