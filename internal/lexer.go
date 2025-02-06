@@ -203,6 +203,7 @@ func Lex(filedata string) {
 						if errorCount == 0 {
 							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
 								programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
+							Parse(tokenStream[programNum-1], programNum)
 						} else {
 							Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 						}
@@ -309,6 +310,7 @@ func Lex(filedata string) {
 		if errorCount == 0 {
 			Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
 				programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
+			Parse(tokenStream[programNum-1], programNum)
 		} else {
 			Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 		}
