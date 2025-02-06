@@ -215,9 +215,15 @@ func Lex(filedata string) {
 				lastPos++ // move past whitespace
 			}
 
-		} else if currentPos >= len(codeRunes) {
-			fmt.Printf("is this possible")
-			break
+		} else if currentPos >= len(codeRunes)-1 {
+			// end of chars - use it like symbol or whitespace
+			fmt.Println("This is the end...")
+			if len(tokenBuffer) > 0 { // no action if buffer empty
+				greedyCapture = evaluatetokenBuffer(tokenBuffer)
+				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
+				lastPos += len(newToken.content)
+				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+			}
 
 		} else {
 			// check for !=
@@ -238,8 +244,26 @@ func Lex(filedata string) {
 		}
 
 		currentPos++
-		if currentPos < lastPos { // ensure we never fall behind
+		if currentPos < lastPos { // ensure we never fall behind - this should not happen
 			currentPos = lastPos
+		}
+	}
+	// ensure we have a program with tokens and that it terminated with $
+	if len(tokenStream) > 0 && len(tokenStream[len(tokenStream)-1]) > 0 &&
+		tokenStream[len(tokenStream)-1][len(tokenStream[len(tokenStream)-1])-1].content != "$" {
+
+		Warn("EOF reached before EOP [ $ ]; EOP token was automatically inserted.", "LEXER")
+		warningCount++
+
+		// artificially add EOP
+		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
+		tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+
+		if errorCount == 0 {
+			Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
+				programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
+		} else {
+			Error(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 		}
 	}
 }

@@ -27,7 +27,7 @@ var SymbolMap = map[rune]string{
 	'}': "CLOSE_BRACE",
 	'(': "OPEN_PAREN",
 	')': "CLOSE_PAREN",
-	'$': "EOPS",
+	'$': "EOP",
 	'=': "ASSIGN_OP",
 	'"': "QUOTE",
 }

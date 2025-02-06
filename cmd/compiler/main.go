@@ -35,7 +35,11 @@ func main() {
 
 	internal.Info(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, *verboseMode), "GOPILER", true)
 
-	internal.Lex(filedata)
+	if len(filedata) == 0 {
+		internal.Warn("Source file empty. No compilation will be executed.", "GOPILER")
+	} else {
+		internal.Lex(filedata)
+	}
 
 	internal.Info("All compilations complete.", "GOPILER", true)
 
