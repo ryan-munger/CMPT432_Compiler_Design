@@ -1,0 +1,9 @@
+{
+    int a
+    a = 3
+    string b
+    b = "test
+
+    a = 5
+    $
+}

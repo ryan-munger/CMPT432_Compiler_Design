@@ -9,18 +9,33 @@ import (
 
 var tokenRe = regexp.MustCompile(`^(boolean|string|print|while|false|true|int|if|[a-z]|\d)\S*$`)
 
-func nextProgram(programNum *int, tokenStream *[][]Token) {
+func nextProgram(programNum *int, tokenStream *[][]Token, errors *int, warns *int) {
 	*programNum++ // deref to update it
 	// add another array for the next program's tokens
 	*tokenStream = append(*tokenStream, []Token{})
-	Info(fmt.Sprintf("Lexing program %d", *programNum), "LEXER", true)
+	Info(fmt.Sprintf("Lexing program %d", *programNum), "GOPILER", true)
+
+	// reset
+	*errors = 0
+	*warns = 0
 }
 
-// do we have another program after $? or just some whitespace
+// do we have another program after $? or just some whitespace or comment
 func nextProgramExists(codeRunes []rune, pos int) bool {
+	var inComment bool = false
 	for i := pos + 1; i < len(codeRunes); i++ {
+		// spaces at end don't count as another program
 		if !unicode.IsSpace(codeRunes[i]) {
-			return true
+			// if there is just a comment left not a new program
+			if codeRunes[i] == '/' && i < len(codeRunes)-1 && codeRunes[i+1] == '*' {
+				i++
+				inComment = true
+			} else if codeRunes[i] == '*' && i < len(codeRunes)-1 && codeRunes[i+1] == '/' {
+				i++
+				inComment = false
+			} else if !inComment {
+				return true
+			}
 		}
 	}
 	return false
@@ -70,6 +85,10 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 		tokenType = Symbol
 		Debug(fmt.Sprintf("N-EQUAL_OP [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
 
+	case " ":
+		tokenType = Character
+		Debug(fmt.Sprintf("CHAR [ (space) ] found at (%d:%d)", line, pos), "LEXER")
+
 	default:
 		if len(capture) == 1 && isSymbol(rune(capture[0])) {
 			tokenType = Symbol
@@ -106,11 +125,9 @@ func Lex(filedata string) {
 	var codeRunes []rune = []rune(filedata)
 
 	var programNum int = 0
-	var tokenStream [][]Token
 	// careful: indexed from 0 but programs from 1
 	// this is NOT an array: it is a 'slice' (dynamically allocated)
-	nextProgram(&programNum, &tokenStream)
-
+	var tokenStream [][]Token
 	var currentPos int = 0
 	var lastPos int = 0
 	var line int = 1  // start at 1
@@ -124,17 +141,24 @@ func Lex(filedata string) {
 	var quoteFlag bool = false
 	var commentFlag bool = false
 
+	// kick us off
+	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+
 	// extract tokens
 	for lastPos < len(codeRunes) {
 		liveRune = codeRunes[currentPos]
 		// fmt.Println(string(liveRune))
 
 		if quoteFlag && liveRune != '"' {
-			if !(liveRune >= 'a' && liveRune <= 'z' || liveRune == ' ') {
+			if !(unicode.IsLower(liveRune) || liveRune == ' ') {
 				if liveRune == '\n' {
-					Error(fmt.Sprintf("Invalid character [ \\n ] found in quote at (%d:%d)", line, lastPos), "LEXER")
+					Error(fmt.Sprintf("Invalid character [ \\n ] found in quote at (%d:%d); "+
+						"Multiline strings are not permitted.", line, lastPos), "LEXER")
 					line++
 					deadPos = lastPos + 1 // increment it directly later
+				} else if liveRune == '$' {
+					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
+						"Perhaps your string is unterminated.", liveRune, line, lastPos), "LEXER")
 				} else {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
 				}
@@ -180,11 +204,11 @@ func Lex(filedata string) {
 							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
 								programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
 						} else {
-							Error(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
+							Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 						}
 
 						if nextProgramExists(codeRunes, currentPos) {
-							nextProgram(&programNum, &tokenStream)
+							nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
 						}
 					} else if liveRune == '"' {
 						quoteFlag = !quoteFlag // flip it
@@ -250,8 +274,11 @@ func Lex(filedata string) {
 				commentFlag = true
 				lastPos += 2 // open comment is 2 chars
 				currentPos++
-			} else {
+			} else if unicode.IsLower(liveRune) || unicode.IsDigit(liveRune) {
 				tokenBuffer = append(tokenBuffer, liveRune) // add to back
+			} else {
+				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d)", liveRune, line, lastPos), "LEXER")
+				errorCount++
 			}
 		}
 
@@ -260,6 +287,14 @@ func Lex(filedata string) {
 			currentPos = lastPos
 		}
 	}
+	if quoteFlag {
+		Warn("EOF reached while inside string; Perhaps string is unterminated.", "LEXER")
+		warningCount++
+	} else if commentFlag {
+		Warn("EOF reached while inside comment; Perhaps comment is unterminated.", "LEXER")
+		warningCount++
+	}
+
 	// ensure we have a program with tokens and that it terminated with $
 	if len(tokenStream) > 0 && len(tokenStream[len(tokenStream)-1]) > 0 &&
 		tokenStream[len(tokenStream)-1][len(tokenStream[len(tokenStream)-1])-1].content != "$" {
@@ -275,7 +310,7 @@ func Lex(filedata string) {
 			Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
 				programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
 		} else {
-			Error(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
+			Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 		}
 	}
 }

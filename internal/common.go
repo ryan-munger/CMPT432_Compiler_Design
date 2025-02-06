@@ -36,6 +36,10 @@ func Pass(msg string, component string) {
 	color.Green(fmt.Sprintf("%-5s | %s --> %s\n", "PASS", component, msg))
 }
 
+func Fail(msg string, component string) {
+	color.Red(fmt.Sprintf("%-5s | %s --> %s\n", "FAIL", component, msg))
+}
+
 func Debug(msg string, component string) {
 	if Verbose {
 		color.Blue(fmt.Sprintf("%-5s | %s --> %s\n", "DEBUG", component, msg))

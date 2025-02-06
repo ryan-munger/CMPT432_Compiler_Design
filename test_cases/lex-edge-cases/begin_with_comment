@@ -1,0 +1,9 @@
+/*comment*/
+{
+    int a
+}$
+/*comment*/
+{
+    int b
+}$
+/*don't start a new program just for me!*/
