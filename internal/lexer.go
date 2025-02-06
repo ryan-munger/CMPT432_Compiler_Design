@@ -172,7 +172,7 @@ func Lex(filedata string) {
 
 		} else if commentFlag {
 			// can't ignore close comment
-			if liveRune == '*' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '/' {
+			if liveRune == '*' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '/' {
 				commentFlag = false
 				lastPos += 2 // close comment is 2 characters
 				currentPos++
@@ -189,7 +189,7 @@ func Lex(filedata string) {
 		} else if isSymbol(liveRune) {
 			if len(tokenBuffer) == 0 { // found a symbol to tokenize directly
 				// check for ==
-				if liveRune == '=' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
+				if liveRune == '=' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
 					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
 					lastPos += 2 // 2 rune symbol
 					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
@@ -263,14 +263,14 @@ func Lex(filedata string) {
 
 		} else {
 			// check for !=
-			if liveRune == '!' && len(tokenBuffer) == 0 && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '=' {
+			if liveRune == '!' && len(tokenBuffer) == 0 && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
 				newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
 				lastPos += 2 // 2 rune symbol
 				currentPos++
 				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
 				// open comment symbol - we want to keep buffer unaffected
-			} else if liveRune == '/' && currentPos < len(codeRunes) && codeRunes[currentPos+1] == '*' {
+			} else if liveRune == '/' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '*' {
 				commentFlag = true
 				lastPos += 2 // open comment is 2 chars
 				currentPos++

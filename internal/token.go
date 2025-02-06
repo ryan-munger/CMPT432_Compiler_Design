@@ -30,4 +30,5 @@ var SymbolMap = map[rune]string{
 	'$': "EOP",
 	'=': "ASSIGN_OP",
 	'"': "QUOTE",
+	'+': "ADD",
 }
