@@ -264,11 +264,17 @@ func Lex(filedata string) {
 
 		} else {
 			// check for !=
-			if liveRune == '!' && len(tokenBuffer) == 0 && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
-				newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
-				lastPos += 2 // 2 rune symbol
-				currentPos++
-				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+			if liveRune == '!' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
+				if len(tokenBuffer) == 0 {
+					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
+					lastPos += 2 // 2 rune symbol
+					currentPos++
+					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+				} else {
+					// we can allow ! to enter the buffer as long as it is followed by an =
+					// we just cannot tokenize != until it is its turn
+					tokenBuffer = append(tokenBuffer, liveRune)
+				}
 
 				// open comment symbol - we want to keep buffer unaffected
 			} else if liveRune == '/' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '*' {
