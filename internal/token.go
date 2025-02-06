@@ -22,6 +22,10 @@ type Token struct {
 	content  string
 }
 
+func TokensAreEqual(t1, t2 *Token) bool {
+	return t1.tType == t2.tType && t1.content == t2.content && t1.location == t2.location
+}
+
 var SymbolMap = map[rune]string{
 	'{': "OPEN_BRACE",
 	'}': "CLOSE_BRACE",
