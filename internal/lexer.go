@@ -131,8 +131,15 @@ func Lex(filedata string) {
 
 		if quoteFlag && liveRune != '"' {
 			if !(liveRune >= 'a' && liveRune <= 'z' || liveRune == ' ') {
-				Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
+				if liveRune == '\n' {
+					Error(fmt.Sprintf("Invalid character [ \\n ] found in quote at (%d:%d)", line, lastPos), "LEXER")
+					line++
+					deadPos = lastPos + 1 // increment it directly later
+				} else {
+					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
+				}
 				errorCount++
+
 			} else {
 				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
 				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
@@ -255,7 +262,7 @@ func Lex(filedata string) {
 		Warn("EOF reached before EOP [ $ ]; EOP token was automatically inserted.", "LEXER")
 		warningCount++
 
-		// artificially add EOP
+		// artificially add EOP at end of last line - user will be told where
 		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
 		tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
 
