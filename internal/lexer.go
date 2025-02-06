@@ -13,7 +13,8 @@ func nextProgram(programNum *int, tokenStream *[][]Token, errors *int, warns *in
 	*programNum++ // deref to update it
 	// add another array for the next program's tokens
 	*tokenStream = append(*tokenStream, []Token{})
-	Info(fmt.Sprintf("Lexing program %d", *programNum), "GOPILER", true)
+	// +1 for human indexing starting at 1
+	Info(fmt.Sprintf("Lexing program %d", *programNum+1), "GOPILER", true)
 
 	// reset
 	*errors = 0
@@ -124,7 +125,7 @@ func Lex(filedata string) {
 	// since there is a non-0 possibility of unicode, this must be done
 	var codeRunes []rune = []rune(filedata)
 
-	var programNum int = 0
+	var programNum int = -1 // since we increment it to 0 on start
 	// careful: indexed from 0 but programs from 1
 	// this is NOT an array: it is a 'slice' (dynamically allocated)
 	var tokenStream [][]Token
@@ -166,7 +167,7 @@ func Lex(filedata string) {
 
 			} else {
 				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
-				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+				tokenStream[programNum] = append(tokenStream[programNum], newToken)
 			}
 			lastPos++
 
@@ -192,18 +193,18 @@ func Lex(filedata string) {
 				if liveRune == '=' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
 					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
 					lastPos += 2 // 2 rune symbol
-					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
 				} else {
 					newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
 					lastPos++
-					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
 					if liveRune == '$' {
 						if errorCount == 0 {
 							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
-								programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
-							Parse(tokenStream[programNum-1], programNum)
+								programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
+							Parse(tokenStream[programNum], programNum)
 						} else {
 							Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 						}
@@ -223,7 +224,7 @@ func Lex(filedata string) {
 				if newToken.content == "/*" { // open block comment
 					commentFlag = true
 				} else {
-					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 				}
 
 				tokenBuffer = []rune{} // release old contents
@@ -239,7 +240,7 @@ func Lex(filedata string) {
 				if newToken.content == "/*" { // open block comment
 					commentFlag = true
 				} else {
-					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 				}
 
 				tokenBuffer = []rune{}
@@ -259,7 +260,7 @@ func Lex(filedata string) {
 				greedyCapture = evaluatetokenBuffer(tokenBuffer)
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
 				lastPos += len(newToken.content)
-				tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+				tokenStream[programNum] = append(tokenStream[programNum], newToken)
 			}
 
 		} else {
@@ -269,7 +270,7 @@ func Lex(filedata string) {
 					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
 					lastPos += 2 // 2 rune symbol
 					currentPos++
-					tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 				} else {
 					// we can allow ! to enter the buffer as long as it is followed by an =
 					// we just cannot tokenize != until it is its turn
@@ -311,12 +312,12 @@ func Lex(filedata string) {
 
 		// artificially add EOP at end of last line - user will be told where
 		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
-		tokenStream[programNum-1] = append(tokenStream[programNum-1], newToken)
+		tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
 		if errorCount == 0 {
 			Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
-				programNum, warningCount, len(tokenStream[programNum-1])), "LEXER")
-			Parse(tokenStream[programNum-1], programNum)
+				programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
+			Parse(tokenStream[programNum], programNum)
 		} else {
 			Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
 		}
