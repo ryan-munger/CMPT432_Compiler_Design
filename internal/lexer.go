@@ -78,6 +78,10 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 		tokenType = Keyword
 		Debug(fmt.Sprintf("I_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
 
+	case "boolean":
+		tokenType = Keyword
+		Debug(fmt.Sprintf("B_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+
 	case "==":
 		tokenType = Symbol
 		Debug(fmt.Sprintf("EQUAL_OP [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
@@ -160,6 +164,9 @@ func Lex(filedata string) {
 				} else if liveRune == '$' {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
 						"Perhaps your string is unterminated.", liveRune, line, lastPos), "LEXER")
+				} else if unicode.IsUpper(liveRune) {
+					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
+						"Hint: Capital letters are not permitted.", liveRune, line, lastPos), "LEXER")
 				} else {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
 				}
@@ -202,11 +209,11 @@ func Lex(filedata string) {
 
 					if liveRune == '$' {
 						if errorCount == 0 {
-							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
+							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
 								programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
 							Parse(tokenStream[programNum], programNum)
 						} else {
-							Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
+							Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
 						}
 
 						if nextProgramExists(codeRunes, currentPos) {
@@ -254,8 +261,11 @@ func Lex(filedata string) {
 			}
 
 		} else if currentPos >= len(codeRunes)-1 {
-			// end of chars - use it like symbol or whitespace
-			fmt.Println("This is the end...")
+			// EOF - use it like symbol or space + make sure we don't index out of range
+			// fmt.Println("This is the end...")
+			// add last char to buffer
+			tokenBuffer = append(tokenBuffer, liveRune)
+
 			if len(tokenBuffer) > 0 { // no action if buffer empty
 				greedyCapture = evaluatetokenBuffer(tokenBuffer)
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
@@ -284,6 +294,10 @@ func Lex(filedata string) {
 				currentPos++
 			} else if unicode.IsLower(liveRune) || unicode.IsDigit(liveRune) {
 				tokenBuffer = append(tokenBuffer, liveRune) // add to back
+			} else if unicode.IsUpper(liveRune) {
+				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
+					"Hint: Capital letters are not permitted.", liveRune, line, lastPos), "LEXER")
+				errorCount++
 			} else {
 				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d)", liveRune, line, lastPos), "LEXER")
 				errorCount++
@@ -315,11 +329,11 @@ func Lex(filedata string) {
 		tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
 		if errorCount == 0 {
-			Pass(fmt.Sprintf("Lexer processed program %d with %d warnings, producing %d tokens.",
+			Pass(fmt.Sprintf("Lexer processed program %d with %d warning(s), producing %d tokens.",
 				programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
 			Parse(tokenStream[programNum], programNum)
 		} else {
-			Fail(fmt.Sprintf("Lexer failed with %d errors and %d warning(s).", errorCount, warningCount), "LEXER")
+			Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
 		}
 	}
 }
