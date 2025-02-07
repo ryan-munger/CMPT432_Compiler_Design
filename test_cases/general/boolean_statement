@@ -1,0 +1,30 @@
+/* Boolean Expr Printing Test Case 
+ - Result: 01234they are equal true and false and false and true*/
+{
+    int a
+    a = 0
+    while (a != 5) {
+        print(a)
+        a = 1 + a
+    }
+
+    if ("str" == "str") {
+        print("they are equal ")
+    }
+
+    if ("stra" == "strb") {
+        print("no dice")  
+    }
+    string s
+    s = " and "
+    print(("a" != "b"))
+    print(s)
+    print(("a" != "a"))
+    boolean b
+    b = false
+    print(s)
+    print(b)
+    b = true
+    print(s)
+    print(b)
+} $

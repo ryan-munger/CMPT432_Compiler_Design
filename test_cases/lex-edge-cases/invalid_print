@@ -1,0 +1,5 @@
+/* This will fail because
+ - you cannot print numbers */
+{
+	print("12")
+}$

@@ -167,6 +167,9 @@ func Lex(filedata string) {
 				} else if unicode.IsUpper(liveRune) {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
 						"Hint: Capital letters are not permitted.", liveRune, line, lastPos), "LEXER")
+				} else if unicode.IsDigit(liveRune) {
+					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
+						"Hint: Digits are not permitted.", liveRune, line, lastPos), "LEXER")
 				} else {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
 				}
