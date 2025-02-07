@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let flag = true;
 
     // Set initial button state
-    const flagButton = document.getElementById("flagButton");
+    const flagButton = document.getElementById("verboseButton");
     flagButton.classList.add("bg-green-500");
     flagButton.textContent = "Verbose Mode: ON";
 
