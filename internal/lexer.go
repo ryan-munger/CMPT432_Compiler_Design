@@ -47,10 +47,6 @@ func isSymbol(candidate rune) bool {
 	if exists {
 		return true
 	}
-	if meaning, exists := SymbolMap[candidate]; exists {
-		fmt.Printf("The symbol '%c' means: %s\n", candidate, meaning)
-		return true
-	}
 	return false
 }
 

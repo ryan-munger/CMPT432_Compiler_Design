@@ -26,12 +26,13 @@ func verifyFile(inputFile string) string {
 }
 
 func main() {
-	inputFile := flag.String("f", "", "Path to source for compilation")
-	verboseMode := flag.Bool("v", false, "Toggle Verbose Mode")
+	inputFile := flag.String("f", "", "String; Path to source for compilation")
+	verboseMode := flag.Bool("v", false, "Bool; Toggle Verbose Mode")
 	flag.Parse()
 
 	var filedata string = verifyFile(*inputFile)
 	internal.SetVerbose(*verboseMode)
+	internal.SetWebMode(false)
 
 	internal.Info(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, *verboseMode), "GOPILER", true)
 
@@ -42,5 +43,4 @@ func main() {
 	}
 
 	internal.Info("All compilations complete.", "GOPILER", true)
-
 }

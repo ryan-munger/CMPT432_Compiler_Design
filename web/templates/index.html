@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gopiler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="../static/favicon.jpg" type="image/x-icon">
+    <script src="../static/script.js"></script>
+</head>
+
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="w-3/4">
+        <!-- Title -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-end gap-2">
+                <h1 class="text-6xl font-extrabold text-green-400">GOPILER</h1>
+                <span class="text-lg text-gray-400">Ryan Munger</span>
+            </div>
+            <button onclick="toggleVerbose()" id="flagButton"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
+                Verbose Mode: ON
+            </button>
+        </div>
+
+        <!-- Input & Console Sections -->
+        <div class="grid grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Input</h2>
+                <textarea id="codeInput"
+                    class="w-full h-96 p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                <div class="flex gap-4 mt-4">
+                    <button id="compileButton"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Compile</button>
+                    <button id="clearButton"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Clear</button>
+                </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Console</h2>
+                <pre id="consoleOutput"
+                    class="w-full h-96 p-3 bg-gray-700 text-green-400 rounded-lg border border-gray-600 overflow-auto"
+                    style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

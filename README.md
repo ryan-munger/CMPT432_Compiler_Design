@@ -1,23 +1,36 @@
 # Gopiler by Ryan Munger
 
-Dear Alan: grade the main branch -- I will likely use feature branches.
+Dear Alan: grade the main branch -- I am using feature branches. You can use either web or CLI mode as they are functionally equivalent (only output medium differs). You will probably opt for the CLI version but I still learned A TON whilst making the web version. Go is cool!
 
 
-# Running Mr. Gopiler
+# Setup
 1. Get GoLang from your package manager or their website.
 1. Ensure `go version` works.
-1. The following commands are to be run from the project directory. I will be using the standardized GoLang project structure. 
-1. **To compile and run (recommended):** `go run ./cmd/compiler/ -v -f <filename>` 
-    1. Currently, the -f arg is just how I will take in the filename to compile.
-    1. -v toggles verbose mode to true (to see detailed output).
-    1. As always, -h or -help will provide this information.
-    1. `go run` automatically handles any needed packages or dependencies. 
-1. To compile an executable to run yourself:
+1. Do not worry about dependencies as go run will handle everything.
+1. **Gopiler has two modes of operation:**
+   1. Web Mode
+   2. CLI Mode
+
+# Running Gopiler in CLI Mode
+1. Note: commands to follow are to be run from the project directory.
+2. **To compile and run (recommended):** `go run ./cmd/cli/main.go -v -f <filename>` 
+    1. The -f arg provides the source file to compile.
+    2. -v toggles verbose mode to true (to see detailed output).
+    3. As always, -h or -help will provide this information.
+3. To compile an executable to run yourself:
     1. You can create a bin folder. Or be messy if you want.
-    1. Linux: `go build -o ./bin/compiler ./cmd/compiler`
-        1. Then: `./bin/compiler -f <filename>`
-    1. Windows: `go build -o ./bin/compiler.exe ./cmd/compiler`
-        1. Then: `.\bin\compiler.exe -f <filename>`
+    2. Linux: `go build -o ./bin/gopiler ./cmd/cli/main.go`
+        1. Then: `./bin/gopiler -v -f <filename>`
+    3. Windows: `go build -o ./bin/compiler.exe ./cmd/cli/main.go`
+        1. Then: `.\bin\gopiler.exe -v -f <filename>`
+
+# Running Gopiler in Web Mode
+1. This creates a frontend for the compiler! Using go made this VERY easy!!!
+1. Note: commands to follow are to be run from the project directory.
+2. Start webserver: `go run ./cmd/web/main.go`
+   1. Add -e (expose) if you wish to open server to the internet (instead of localhost)
+   2. -h will show information
+3. A POST request will send the user's code to the backend and get back the compiler log messages!
 
 # In this course I strive to:
 * Gain and demonstrate an understanding of the fundamental areas of compiler

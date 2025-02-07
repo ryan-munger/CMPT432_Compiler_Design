@@ -2,46 +2,99 @@ package internal
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/fatih/color"
 )
 
+var (
+	webMode   bool       // Flag to toggle between CLI and Web mode
+	logBuffer string     // Stores log output for Web mode
+	mu        sync.Mutex // Ensures safe concurrent access
+)
+
+// capitalized = export
+// lowercase = internal
 var Verbose bool
 
 func SetVerbose(toggle bool) {
 	Verbose = toggle
 }
 
-// capitalized = export
-// lowercase = internal
-func Info(msg string, component string, space bool) {
-	if space {
-		fmt.Printf("\n%-5s | %s --> %s\n", "INFO", component, msg)
-	} else {
-		fmt.Printf("%-5s | %s --> %s\n", "INFO", component, msg)
+func SetWebMode(toggle bool) {
+	webMode = toggle
+}
+
+func appendLog(msg string) {
+	mu.Lock()
+	logBuffer += msg
+	mu.Unlock()
+}
+
+// web mode needs html to render
+func Debug(msg string, component string) {
+	logMsg := fmt.Sprintf("%-5s | %s --> %s", "DEBUG", component, msg)
+	if webMode && Verbose {
+		appendLog(fmt.Sprintf(`<span class="text-blue-400">%s</span><br>`, logMsg))
+	} else if Verbose {
+		fmt.Print(color.BlueString(logMsg + "\n"))
 	}
 }
 
 func Error(msg string, component string) {
-	if Verbose {
-		color.Red(fmt.Sprintf("%-5s | %s --> %s\n", "ERROR", component, msg))
+	logMsg := fmt.Sprintf("%-5s | %s --> %s", "ERROR", component, msg)
+	if webMode {
+		appendLog(fmt.Sprintf(`<span class="text-red-400">%s</span><br>`, logMsg))
+	} else if Verbose {
+		color.Red(logMsg)
 	}
 }
 
 func Warn(msg string, component string) {
-	color.Yellow(fmt.Sprintf("%-5s | %s --> %s\n", "WARN", component, msg))
+	logMsg := fmt.Sprintf("%-5s | %s --> %s", "WARN", component, msg)
+	if webMode {
+		appendLog(fmt.Sprintf(`<span class="text-yellow-400">%s</span><br>`, logMsg))
+	} else {
+		color.Yellow(logMsg)
+	}
 }
 
 func Pass(msg string, component string) {
-	color.Green(fmt.Sprintf("%-5s | %s --> %s\n", "PASS", component, msg))
+	logMsg := fmt.Sprintf("%-5s | %s --> %s", "PASS", component, msg)
+	if webMode {
+		appendLog(fmt.Sprintf(`<span class="text-green-400">%s</span><br>`, logMsg))
+	} else {
+		color.Green(logMsg)
+	}
 }
 
 func Fail(msg string, component string) {
-	color.Red(fmt.Sprintf("%-5s | %s --> %s\n", "FAIL", component, msg))
+	logMsg := fmt.Sprintf("%-5s | %s --> %s", "FAIL", component, msg)
+	if webMode {
+		appendLog(fmt.Sprintf(`<span class="text-red-500">%s</span><br>`, logMsg))
+	} else {
+		color.Red(logMsg)
+	}
 }
 
-func Debug(msg string, component string) {
-	if Verbose {
-		color.Blue(fmt.Sprintf("%-5s | %s --> %s\n", "DEBUG", component, msg))
+func Info(msg string, component string, space bool) {
+	logMsg := fmt.Sprintf("%-5s | %s --> %s", "INFO", component, msg)
+	if space {
+		logMsg = "\n" + logMsg
 	}
+
+	if webMode {
+		appendLog(fmt.Sprintf(`<span class="text-white">%s</span><br>`, logMsg))
+	} else {
+		fmt.Print(logMsg + "\n")
+	}
+}
+
+// Retrieve log output for web responses
+func GetLogOutput() string {
+	mu.Lock()
+	defer mu.Unlock()
+	output := logBuffer
+	logBuffer = "" // Clear after reading
+	return output
 }
