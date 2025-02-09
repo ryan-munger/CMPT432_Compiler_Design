@@ -147,8 +147,13 @@ func Lex(filedata string) {
 	var commentFlag bool = false
 	var evaluateBuffer = false
 
-	// kick us off
-	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+	// kick us off - but trust NOBODY - could be file of just whitespace
+	if nextProgramExists(codeRunes, 0) {
+		nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+	} else {
+		Warn("\nCode provided is only whitespace! No tokens generated.", "LEXER")
+		return
+	}
 
 	// extract tokens
 	for lastPos < len(codeRunes) {
