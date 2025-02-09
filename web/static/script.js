@@ -1,17 +1,17 @@
 document.addEventListener("DOMContentLoaded", function () {
-    let flag = true;
+    let verboseFlag = true;
 
     // Set initial button state
-    const flagButton = document.getElementById("verboseButton");
-    flagButton.classList.add("bg-green-500");
-    flagButton.textContent = "Verbose Mode: ON";
+    const verboseButton = document.getElementById("verboseButton");
+    verboseButton.classList.add("bg-green-500");
+    verboseButton.textContent = "Verbose Mode: ON";
 
     // Toggle verbose mode
-    flagButton.addEventListener("click", function () {
-        flag = !flag;
-        flagButton.textContent = "Verbose Mode: " + (flag ? "ON" : "OFF");
-        flagButton.classList.toggle("bg-green-500", flag);
-        flagButton.classList.toggle("bg-gray-700", !flag);
+    verboseButton.addEventListener("click", function () {
+        verboseFlag = !verboseFlag;
+        verboseButton.textContent = "Verbose Mode: " + (verboseFlag ? "ON" : "OFF");
+        verboseButton.classList.toggle("bg-green-500", verboseFlag);
+        verboseButton.classList.toggle("bg-gray-700", !verboseFlag);
     });
 
     // Capture Tab Key in the textarea
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Compile code function
     document.getElementById("compileButton").addEventListener("click", function () {
         const code = document.getElementById("codeInput").value;
-        const verbose = document.getElementById("flagButton").textContent.includes("ON");
+        const verbose = document.getElementById("verboseButton").textContent.includes("ON");
     
         fetch("/compile", {
             method: "POST",
