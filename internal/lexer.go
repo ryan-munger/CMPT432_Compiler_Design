@@ -135,7 +135,7 @@ func Lex(filedata string) {
 	var tokenStream [][]Token
 	var currentPos int = 0
 	var lastPos int = 0
-	var line int = 1  // start at 1
+	var line int = 1  // start at 1 as its a value for user only
 	var liveRune rune // char
 	var tokenBuffer []rune
 	var greedyCapture string
@@ -156,28 +156,29 @@ func Lex(filedata string) {
 		// fmt.Println(string(liveRune))
 
 		if quoteFlag && liveRune != '"' {
+			var currentCol = lastPos - deadPos + 1
 			if !(unicode.IsLower(liveRune) || liveRune == ' ') {
 				if liveRune == '\n' {
 					Error(fmt.Sprintf("Invalid character [ \\n ] found in quote at (%d:%d); "+
-						"Multiline strings are not permitted.", line, lastPos), "LEXER")
-					lastPos-- // bc function and this block both add to it
+						"Multiline strings are not permitted.", line, currentCol), "LEXER")
+					lastPos-- // bc newline function and this block both add to it
 					handleNewLine(&line, &lastPos, &deadPos)
 				} else if liveRune == '$' {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
-						"Perhaps your string is unterminated.", liveRune, line, lastPos), "LEXER")
+						"Perhaps your string is unterminated.", liveRune, line, currentCol), "LEXER")
 				} else if unicode.IsUpper(liveRune) {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
-						"Hint: Capital letters are not permitted.", liveRune, line, lastPos), "LEXER")
+						"Hint: Capital letters are not permitted.", liveRune, line, currentCol), "LEXER")
 				} else if unicode.IsDigit(liveRune) {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
-						"Hint: Digits are not permitted.", liveRune, line, lastPos), "LEXER")
+						"Hint: Digits are not permitted.", liveRune, line, currentCol), "LEXER")
 				} else {
-					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, lastPos), "LEXER")
+					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d)", liveRune, line, currentCol), "LEXER")
 				}
 				errorCount++
 
 			} else { // valid quote chars get their own tokens
-				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
+				newToken = tokenize(string(liveRune), line, currentCol, quoteFlag)
 				tokenStream[programNum] = append(tokenStream[programNum], newToken)
 			}
 			lastPos++ // we added a char
@@ -246,15 +247,15 @@ func Lex(filedata string) {
 				currentPos = lastPos - 1
 			}
 
-		} else if currentPos >= len(codeRunes)-1 {
-			// EOF - use it like symbol or space + make sure we don't index out of range
-			// fmt.Println("This is the end...")
-			// add last char to buffer
-			tokenBuffer = append(tokenBuffer, liveRune)
+			// EOF delimiter
+			// } else if currentPos >= len(codeRunes)-1 {
+			// 	// fmt.Println("This is the end...")
+			// 	// add last char to buffer
+			// 	tokenBuffer = append(tokenBuffer, liveRune)
 
-			if len(tokenBuffer) > 0 { // no action if buffer empty
-				evaluateBuffer = true
-			}
+			// 	if len(tokenBuffer) > 0 { // no action if buffer empty
+			// 		evaluateBuffer = true
+			// 	}
 
 		} else { // didn't find a delimiter
 			// check for !=
@@ -279,15 +280,31 @@ func Lex(filedata string) {
 			} else if unicode.IsLower(liveRune) || unicode.IsDigit(liveRune) {
 				tokenBuffer = append(tokenBuffer, liveRune) // add to back
 
-			} else if unicode.IsUpper(liveRune) {
-				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
-					"Hint: Capital letters are not permitted.", liveRune, line, lastPos), "LEXER")
-				errorCount++
-
+				// we need to use invalid char as delimiter or i9nt would produce int
 			} else {
-				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d)", liveRune, line, lastPos), "LEXER")
-				errorCount++
+				if len(tokenBuffer) > 0 { // hold off erroring
+					evaluateBuffer = true
+
+				} else { // error the invalid
+					if unicode.IsUpper(liveRune) {
+						Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
+							"Hint: Capital letters are not permitted.", liveRune, line, lastPos-deadPos+1), "LEXER")
+					} else {
+						Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d)", liveRune, line, lastPos-deadPos+1), "LEXER")
+					}
+					lastPos++
+					errorCount++
+				}
 			}
+
+			// EOF delimiter
+			if currentPos >= len(codeRunes)-1 {
+				// fmt.Println("This is the end...")
+				if len(tokenBuffer) > 0 { // no action if buffer empty
+					evaluateBuffer = true
+				}
+			}
+
 		}
 
 		// get what we can from the buffer, tokenize it, jump forward to end of that token, and clean buffer
