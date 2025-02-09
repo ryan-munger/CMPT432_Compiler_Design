@@ -101,6 +101,7 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 			tokenType = Digit
 			Debug(fmt.Sprintf("DIGIT [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
 		} else {
+			// char or identifier is based off quotes
 			if quoteFlag {
 				tokenType = Character
 				Debug(fmt.Sprintf("CHAR [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
@@ -144,6 +145,7 @@ func Lex(filedata string) {
 	var errorCount int = 0
 	var quoteFlag bool = false
 	var commentFlag bool = false
+	var evaluateBuffer = false
 
 	// kick us off
 	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
@@ -174,20 +176,22 @@ func Lex(filedata string) {
 				}
 				errorCount++
 
-			} else {
+			} else { // valid quote chars get their own tokens
 				newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
 				tokenStream[programNum] = append(tokenStream[programNum], newToken)
 			}
-			lastPos++
+			lastPos++ // we added a char
 
 		} else if commentFlag {
-			// can't ignore close comment
+			// can't ignore close comment in comment
+			// lookahead for the / after *
 			if liveRune == '*' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '/' {
 				commentFlag = false
 				lastPos += 2 // close comment is 2 characters
 				currentPos++
 
 			} else if liveRune == '\n' {
+				// we still need to keep track of line despite comment
 				handleNewLine(&line, &lastPos, &deadPos)
 			} else {
 				// fmt.Println("Threw away " + string(liveRune))
@@ -196,18 +200,22 @@ func Lex(filedata string) {
 
 		} else if isSymbol(liveRune) {
 			if len(tokenBuffer) == 0 { // found a symbol to tokenize directly
-				// check for ==
+				// check for == with lookahead
 				if liveRune == '=' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
 					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
-					lastPos += 2 // 2 rune symbol
+					lastPos += 2             // 2 rune symbol
+					currentPos = lastPos - 1 // incremented at end of loop
 					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
 				} else {
+					// tokenize single symbol
 					newToken = tokenize(string(liveRune), line, lastPos-deadPos+1, quoteFlag)
 					lastPos++
+					currentPos = lastPos - 1
 					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
-					if liveRune == '$' {
+					// special cases
+					if liveRune == '$' { // EOP
 						if errorCount == 0 {
 							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
 								programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
@@ -223,39 +231,19 @@ func Lex(filedata string) {
 						quoteFlag = !quoteFlag // flip it
 					}
 				}
-			} else {
-				greedyCapture = evaluateTokenBuffer(tokenBuffer) // hit a symbol, check what we have
-				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
-				lastPos += len(newToken.content) // find the offset based on chars taken
-
-				if newToken.content == "/*" { // open block comment
-					commentFlag = true
-				} else {
-					tokenStream[programNum] = append(tokenStream[programNum], newToken)
-				}
-
-				tokenBuffer = []rune{} // release old contents
+			} else { // use symbol as delimiter
+				evaluateBuffer = true
 			}
-			currentPos = lastPos - 1 // we increment it later
 
 		} else if unicode.IsSpace(liveRune) {
-			if len(tokenBuffer) > 0 { // no action if buffer empty
-				greedyCapture = evaluateTokenBuffer(tokenBuffer)
-				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
-				lastPos += len(newToken.content) // find the offset based on chars taken
-
-				if newToken.content == "/*" { // open block comment
-					commentFlag = true
-				} else {
-					tokenStream[programNum] = append(tokenStream[programNum], newToken)
-				}
-
-				tokenBuffer = []rune{}
-				currentPos = lastPos - 1
+			// use space as delimiter
+			if len(tokenBuffer) > 0 { // buffer not empty
+				evaluateBuffer = true
 			} else if liveRune == '\n' {
 				handleNewLine(&line, &lastPos, &deadPos)
 			} else {
 				lastPos++ // move past whitespace
+				currentPos = lastPos - 1
 			}
 
 		} else if currentPos >= len(codeRunes)-1 {
@@ -265,23 +253,20 @@ func Lex(filedata string) {
 			tokenBuffer = append(tokenBuffer, liveRune)
 
 			if len(tokenBuffer) > 0 { // no action if buffer empty
-				greedyCapture = evaluateTokenBuffer(tokenBuffer)
-				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
-				lastPos += len(newToken.content)
-				tokenStream[programNum] = append(tokenStream[programNum], newToken)
+				evaluateBuffer = true
 			}
 
-		} else {
+		} else { // didn't find a delimiter
 			// check for !=
 			if liveRune == '!' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
 				if len(tokenBuffer) == 0 {
 					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
 					lastPos += 2 // 2 rune symbol
-					currentPos++
+					currentPos = lastPos - 1
 					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 				} else {
 					// we can allow ! to enter the buffer as long as it is followed by an =
-					// we just cannot tokenize != until it is its turn
+					// we just cannot tokenize != until it is its turn or tokens will be out of order
 					tokenBuffer = append(tokenBuffer, liveRune)
 				}
 
@@ -289,24 +274,46 @@ func Lex(filedata string) {
 			} else if liveRune == '/' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '*' {
 				commentFlag = true
 				lastPos += 2 // open comment is 2 chars
-				currentPos++
+				currentPos = lastPos - 1
+
 			} else if unicode.IsLower(liveRune) || unicode.IsDigit(liveRune) {
 				tokenBuffer = append(tokenBuffer, liveRune) // add to back
+
 			} else if unicode.IsUpper(liveRune) {
 				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
 					"Hint: Capital letters are not permitted.", liveRune, line, lastPos), "LEXER")
 				errorCount++
+
 			} else {
 				Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d)", liveRune, line, lastPos), "LEXER")
 				errorCount++
 			}
 		}
 
+		// get what we can from the buffer, tokenize it, jump forward to end of that token, and clean buffer
+		if evaluateBuffer {
+			greedyCapture = evaluateTokenBuffer(tokenBuffer) // check what we have
+			newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
+			lastPos += len(newToken.content) // find the offset based on chars taken
+			currentPos = lastPos - 1         // incremented at end of loop
+
+			if newToken.content == "/*" { // open block comment
+				commentFlag = true
+			} else {
+				tokenStream[programNum] = append(tokenStream[programNum], newToken)
+			}
+
+			tokenBuffer = []rune{} // release old contents
+
+			evaluateBuffer = false
+		}
+
 		currentPos++
-		if currentPos < lastPos { // ensure we never fall behind - this should not happen
+		if currentPos < lastPos { // ensure we never fall behind - this should never happen
 			currentPos = lastPos
 		}
 	}
+
 	if quoteFlag {
 		Warn("EOF reached while inside string; Perhaps string is unterminated.", "LEXER")
 		warningCount++
