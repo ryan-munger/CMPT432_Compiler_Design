@@ -44,13 +44,16 @@ func nextProgramExists(codeRunes []rune, pos int) bool {
 
 func isSymbol(candidate rune) bool {
 	_, exists := SymbolMap[candidate]
-	if exists {
-		return true
-	}
-	return false
+	return exists
 }
 
-func evaluatetokenBuffer(tokenBuffer []rune) string {
+func handleNewLine(line *int, lastPos *int, deadPos *int) {
+	*line++
+	*lastPos++
+	*deadPos = *lastPos
+}
+
+func evaluateTokenBuffer(tokenBuffer []rune) string {
 	// fmt.Println(string(tokenBuffer))
 	match := tokenRe.FindStringSubmatch(string(tokenBuffer))
 	if match != nil {
@@ -155,8 +158,8 @@ func Lex(filedata string) {
 				if liveRune == '\n' {
 					Error(fmt.Sprintf("Invalid character [ \\n ] found in quote at (%d:%d); "+
 						"Multiline strings are not permitted.", line, lastPos), "LEXER")
-					line++
-					deadPos = lastPos + 1 // increment it directly later
+					lastPos-- // bc function and this block both add to it
+					handleNewLine(&line, &lastPos, &deadPos)
 				} else if liveRune == '$' {
 					Error(fmt.Sprintf("Invalid character [ %c ] found in quote at (%d:%d); "+
 						"Perhaps your string is unterminated.", liveRune, line, lastPos), "LEXER")
@@ -185,9 +188,7 @@ func Lex(filedata string) {
 				currentPos++
 
 			} else if liveRune == '\n' {
-				line++
-				lastPos++
-				deadPos = lastPos
+				handleNewLine(&line, &lastPos, &deadPos)
 			} else {
 				// fmt.Println("Threw away " + string(liveRune))
 				lastPos++ // throw it away
@@ -223,7 +224,7 @@ func Lex(filedata string) {
 					}
 				}
 			} else {
-				greedyCapture = evaluatetokenBuffer(tokenBuffer) // hit a symbol, check what we have
+				greedyCapture = evaluateTokenBuffer(tokenBuffer) // hit a symbol, check what we have
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
 				lastPos += len(newToken.content) // find the offset based on chars taken
 
@@ -239,7 +240,7 @@ func Lex(filedata string) {
 
 		} else if unicode.IsSpace(liveRune) {
 			if len(tokenBuffer) > 0 { // no action if buffer empty
-				greedyCapture = evaluatetokenBuffer(tokenBuffer)
+				greedyCapture = evaluateTokenBuffer(tokenBuffer)
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
 				lastPos += len(newToken.content) // find the offset based on chars taken
 
@@ -252,9 +253,7 @@ func Lex(filedata string) {
 				tokenBuffer = []rune{}
 				currentPos = lastPos - 1
 			} else if liveRune == '\n' {
-				line++
-				lastPos++
-				deadPos = lastPos
+				handleNewLine(&line, &lastPos, &deadPos)
 			} else {
 				lastPos++ // move past whitespace
 			}
@@ -266,7 +265,7 @@ func Lex(filedata string) {
 			tokenBuffer = append(tokenBuffer, liveRune)
 
 			if len(tokenBuffer) > 0 { // no action if buffer empty
-				greedyCapture = evaluatetokenBuffer(tokenBuffer)
+				greedyCapture = evaluateTokenBuffer(tokenBuffer)
 				newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
 				lastPos += len(newToken.content)
 				tokenStream[programNum] = append(tokenStream[programNum], newToken)
