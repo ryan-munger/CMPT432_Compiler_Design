@@ -124,6 +124,12 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 }
 
 func Lex(filedata string) {
+	defer func() { // so that any errors do not explode the compiler
+		if r := recover(); r != nil {
+			CriticalError("lexer", r)
+		}
+	}()
+
 	// convert string to array of runes
 	// regular strings are indexed by bytes and thus can only handle ASCII
 	// since there is a non-0 possibility of unicode, this must be done

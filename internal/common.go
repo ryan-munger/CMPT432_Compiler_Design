@@ -90,6 +90,11 @@ func Info(msg string, component string, space bool) {
 	}
 }
 
+func CriticalError(location string, err interface{}) {
+	color.Red(fmt.Sprintf("DEFEAT | GOPILER --> Congratulations grand wizard. You have truly bested me.\n"+
+		"\tYour code caused a critical error in the %s: %v\n", location, err))
+}
+
 // Retrieve log output for web responses
 func GetLogOutput() string {
 	mu.Lock()
