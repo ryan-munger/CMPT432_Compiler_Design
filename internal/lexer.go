@@ -165,6 +165,7 @@ func Lex(filedata string) {
 	var evaluateBuffer = false
 	// if comment after EOP but before EOF is unterminated throw err for last program
 	var untermEndComment = false
+	var alreadyErrUntermComment = false // so we don't do it twice
 
 	// kick us off - but trust NOBODY - could be file of just whitespace
 	// if nextProgramExists(codeRunes, -1, &untermEndComment) {
@@ -254,6 +255,7 @@ func Lex(filedata string) {
 							Error("Unterminated comment after EOP.", "LEXER")
 							errorCount++
 							untermEndComment = false
+							alreadyErrUntermComment = true
 							passFailProgram(programNum, errorCount, warningCount, tokenStream)
 						}
 
@@ -353,7 +355,7 @@ func Lex(filedata string) {
 	if quoteFlag {
 		Error("EOF reached while inside string; Strings must be terminated.", "LEXER")
 		errorCount++
-	} else if commentFlag {
+	} else if commentFlag && !alreadyErrUntermComment {
 		Error("EOF reached while inside comment; Comments must be terminated.", "LEXER")
 		errorCount++
 	}
