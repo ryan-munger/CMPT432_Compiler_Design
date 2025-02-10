@@ -22,7 +22,7 @@ func nextProgram(programNum *int, tokenStream *[][]Token, errors *int, warns *in
 }
 
 // do we have another program after $? or just some whitespace or comment
-func nextProgramExists(codeRunes []rune, pos int) bool {
+func nextProgramExists(codeRunes []rune, pos int, untermEndComment *bool) bool {
 	var inComment bool = false
 	for i := pos + 1; i < len(codeRunes); i++ {
 		// spaces at end don't count as another program
@@ -39,6 +39,7 @@ func nextProgramExists(codeRunes []rune, pos int) bool {
 			}
 		}
 	}
+	*untermEndComment = inComment
 	return false
 }
 
@@ -60,6 +61,16 @@ func evaluateTokenBuffer(tokenBuffer []rune) string {
 		return match[1]
 	}
 	return "NOMATCH"
+}
+
+func passFailProgram(programNum int, errorCount int, warningCount int, tokenStream [][]Token) {
+	if errorCount == 0 {
+		Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
+			programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
+		Parse(tokenStream[programNum], programNum)
+	} else {
+		Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
+	}
 }
 
 func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
@@ -152,14 +163,22 @@ func Lex(filedata string) {
 	var quoteFlag bool = false
 	var commentFlag bool = false
 	var evaluateBuffer = false
+	// if comment after EOP but before EOF is unterminated throw err for last program
+	var untermEndComment = false
 
 	// kick us off - but trust NOBODY - could be file of just whitespace
-	if nextProgramExists(codeRunes, 0) {
-		nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
-	} else {
-		Warn("\nCode provided is only whitespace! No tokens generated.", "LEXER")
-		return
-	}
+	// if nextProgramExists(codeRunes, -1, &untermEndComment) {
+	// 	fmt.Println(untermEndComment)
+	// 	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+	// } else {
+	// 	Warn("Code provided is only whitespace and/or comments! No tokens generated.", "LEXER")
+	// 	warningCount++
+	// 	tokenStream = append(tokenStream, []Token{})
+
+	// 	Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
+	// 		programNum+1, warningCount, 0), "LEXER")
+	// }
+	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
 
 	// extract tokens
 	for lastPos < len(codeRunes) {
@@ -228,17 +247,16 @@ func Lex(filedata string) {
 
 					// special cases
 					if liveRune == '$' { // EOP
-						if errorCount == 0 {
-							Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
-								programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
-							Parse(tokenStream[programNum], programNum)
-						} else {
-							Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
+						if nextProgramExists(codeRunes, currentPos, &untermEndComment) {
+							passFailProgram(programNum, errorCount, warningCount, tokenStream)
+							nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+						} else if untermEndComment {
+							Error("Unterminated comment after EOP.", "LEXER")
+							errorCount++
+							untermEndComment = false
+							passFailProgram(programNum, errorCount, warningCount, tokenStream)
 						}
 
-						if nextProgramExists(codeRunes, currentPos) {
-							nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
-						}
 					} else if liveRune == '"' {
 						quoteFlag = !quoteFlag // flip it
 					}
@@ -257,16 +275,6 @@ func Lex(filedata string) {
 				lastPos++ // move past whitespace
 				currentPos = lastPos - 1
 			}
-
-			// EOF delimiter
-			// } else if currentPos >= len(codeRunes)-1 {
-			// 	// fmt.Println("This is the end...")
-			// 	// add last char to buffer
-			// 	tokenBuffer = append(tokenBuffer, liveRune)
-
-			// 	if len(tokenBuffer) > 0 { // no action if buffer empty
-			// 		evaluateBuffer = true
-			// 	}
 
 		} else { // didn't find a delimiter
 			// check for !=
@@ -361,12 +369,18 @@ func Lex(filedata string) {
 		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
 		tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
-		if errorCount == 0 {
-			Pass(fmt.Sprintf("Lexer processed program %d with %d warning(s), producing %d tokens.",
-				programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
-			Parse(tokenStream[programNum], programNum)
-		} else {
-			Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
-		}
+		passFailProgram(programNum, errorCount, warningCount, tokenStream)
+
+	} else if len(tokenStream[len(tokenStream)-1]) == 0 {
+		Warn("Code provided is only whitespace and/or comments! No tokens generated.", "LEXER")
+		warningCount++
+		Warn("EOF reached before EOP [ $ ]; EOP token was automatically inserted.", "LEXER")
+		warningCount++
+
+		// artificially add EOP at end of last line - user will be told where
+		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
+		tokenStream[programNum] = append(tokenStream[programNum], newToken)
+
+		passFailProgram(programNum, errorCount, warningCount, tokenStream)
 	}
 }
