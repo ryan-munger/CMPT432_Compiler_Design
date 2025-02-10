@@ -343,11 +343,11 @@ func Lex(filedata string) {
 	}
 
 	if quoteFlag {
-		Warn("EOF reached while inside string; Perhaps string is unterminated.", "LEXER")
-		warningCount++
+		Error("EOF reached while inside string; Strings must be terminated.", "LEXER")
+		errorCount++
 	} else if commentFlag {
-		Warn("EOF reached while inside comment; Perhaps comment is unterminated.", "LEXER")
-		warningCount++
+		Error("EOF reached while inside comment; Comments must be terminated.", "LEXER")
+		errorCount++
 	}
 
 	// ensure we have a program with tokens and that it terminated with $

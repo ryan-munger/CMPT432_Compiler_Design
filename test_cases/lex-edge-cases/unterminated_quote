@@ -2,8 +2,9 @@
     int a
     a = 3
     string b
-    b = "test
+    b = "test"
 
     a = 5
+    b = "untermed
     $
 }
