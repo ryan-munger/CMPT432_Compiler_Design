@@ -13,16 +13,16 @@ Dear Alan: grade the main branch -- I am using feature branches. You can use eit
 
 # Running Gopiler in CLI Mode
 1. Note: commands to follow are to be run from the project directory.
-2. **To compile and run (recommended):** `go run ./cmd/cli/main.go -v -f <filename>` 
+2. **To compile and run (recommended):** `go run ./cmd/cli/main.go -f <filename>` 
     1. The -f arg provides the source file to compile.
-    2. -v toggles verbose mode to true (to see detailed output).
+    2. -t toggles tense mode (to hide detailed output).
     3. As always, -h or -help will provide this information.
 3. To compile an executable to run yourself:
     1. You can create a bin folder. Or be messy if you want.
     2. Linux: `go build -o ./bin/gopiler ./cmd/cli/main.go`
-        1. Then: `./bin/gopiler -v -f <filename>`
+        1. Then: `./bin/gopiler -f <filename>`
     3. Windows: `go build -o ./bin/compiler.exe ./cmd/cli/main.go`
-        1. Then: `.\bin\gopiler.exe -v -f <filename>`
+        1. Then: `.\bin\gopiler.exe -f <filename>`
 
 # Running Gopiler in Web Mode
 1. This creates a frontend for the compiler! Using go made this VERY easy!!!
