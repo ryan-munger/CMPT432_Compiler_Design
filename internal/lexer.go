@@ -257,6 +257,8 @@ func Lex(filedata string) {
 							untermEndComment = false
 							alreadyErrUntermComment = true
 							passFailProgram(programNum, errorCount, warningCount, tokenStream)
+						} else {
+							passFailProgram(programNum, errorCount, warningCount, tokenStream)
 						}
 
 					} else if liveRune == '"' {
