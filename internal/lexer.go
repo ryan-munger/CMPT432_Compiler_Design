@@ -73,6 +73,27 @@ func passFailProgram(programNum int, errorCount int, warningCount int, tokenStre
 	}
 }
 
+// for != and ==
+func nextRune(target rune, codeRunes []rune, currentPos int) int {
+	// -1 if next rune is not target
+	// position of target rune after comment if that ever happens
+	if currentPos >= len(codeRunes)-1 { // cannot look ahead
+		return -1
+	}
+	if codeRunes[currentPos+1] == target {
+		return currentPos + 1
+	}
+	// CRAZY INSANE scenario where =/*comment*/= should net a ==
+	if currentPos+2 < len(codeRunes)-1 && codeRunes[currentPos+1] == '/' && codeRunes[currentPos+2] == '*' {
+		for i := currentPos + 2; i < len(codeRunes)-3; i++ {
+			if codeRunes[i] == '*' && codeRunes[i+1] == '/' && codeRunes[i+2] == target {
+				return i + 2
+			}
+		}
+	}
+	return -1
+}
+
 func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 	var tokenType TokenType
 	switch capture {
@@ -245,10 +266,12 @@ func Lex(filedata string) {
 		} else if isSymbol(liveRune) {
 			if len(tokenBuffer) == 0 { // found a symbol to tokenize directly
 				// check for == with lookahead
-				if liveRune == '=' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
-					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
-					lastPos += 2             // 2 rune symbol
-					currentPos = lastPos - 1 // incremented at end of loop
+				// we do this crazy logic to ensure =/*COMMENT*/= registers as ==
+				var secondEqPos int = nextRune('=', codeRunes, currentPos)
+				if liveRune == '=' && secondEqPos != -1 {
+					newToken = tokenize(string(liveRune)+string(codeRunes[secondEqPos]), line, lastPos-deadPos+1, quoteFlag)
+					lastPos = secondEqPos + 1 // 2 rune symbol
+					currentPos = lastPos - 1  // incremented at end of loop
 					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
 				} else {
@@ -294,10 +317,12 @@ func Lex(filedata string) {
 
 		} else { // didn't find a delimiter
 			// check for !=
-			if liveRune == '!' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '=' {
+			// we do this crazy logic to ensure !/*COMMENT*/= registers as !=
+			var followingEqPos int = nextRune('=', codeRunes, currentPos)
+			if liveRune == '!' && followingEqPos != -1 {
 				if len(tokenBuffer) == 0 {
-					newToken = tokenize(string(liveRune)+string(codeRunes[currentPos+1]), line, lastPos-deadPos+1, quoteFlag)
-					lastPos += 2 // 2 rune symbol
+					newToken = tokenize(string(liveRune)+string(codeRunes[followingEqPos]), line, lastPos-deadPos+1, quoteFlag)
+					lastPos = followingEqPos + 1 // 2 rune symbol
 					currentPos = lastPos - 1
 					tokenStream[programNum] = append(tokenStream[programNum], newToken)
 				} else {
@@ -359,7 +384,6 @@ func Lex(filedata string) {
 			if len(tokenBuffer) < currentPos-lastPos {
 				// token spans a comment
 				if lastPos+len(newToken.content) > lastCommentStart {
-					// println("spanned")
 					lastPos += len(newToken.content) + inTokenCommentPos
 					inTokenCommentPos = 0
 				} else {
