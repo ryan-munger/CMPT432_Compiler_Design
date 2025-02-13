@@ -163,6 +163,8 @@ func Lex(filedata string) {
 	var quoteFlag bool = false
 	var commentFlag bool = false
 	var evaluateBuffer = false
+	var lastCommentStart int = 0
+	var inTokenCommentPos int = 0
 	// if comment after EOP but before EOF is unterminated throw err for last program
 	var untermEndComment = false
 	var alreadyErrUntermComment = false // so we don't do it twice
@@ -184,7 +186,8 @@ func Lex(filedata string) {
 	// extract tokens
 	for lastPos < len(codeRunes) {
 		liveRune = codeRunes[currentPos]
-		// fmt.Println(string(liveRune))
+		// println("Last: ", lastPos)
+		// fmt.Println(string(liveRune) + " live")
 
 		if quoteFlag && liveRune != '"' {
 			var currentCol = lastPos - deadPos + 1
@@ -219,15 +222,24 @@ func Lex(filedata string) {
 			// lookahead for the / after *
 			if liveRune == '*' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '/' {
 				commentFlag = false
-				lastPos += 2 // close comment is 2 characters
-				currentPos++
+				if len(tokenBuffer) == 0 { // can't update last pos if stuff exists pre-comment
+					lastPos += 2 // close comment is 2 characters
+					currentPos = lastPos - 1
+				} else {
+					currentPos++
+					inTokenCommentPos += 2
+				}
 
 			} else if liveRune == '\n' {
 				// we still need to keep track of line despite comment
 				handleNewLine(&line, &lastPos, &deadPos)
 			} else {
 				// fmt.Println("Threw away " + string(liveRune))
-				lastPos++ // throw it away
+				if len(tokenBuffer) == 0 {
+					lastPos++ // throw it away
+				} else {
+					inTokenCommentPos++
+				}
 			}
 
 		} else if isSymbol(liveRune) {
@@ -297,8 +309,14 @@ func Lex(filedata string) {
 				// open comment symbol - we want to keep buffer unaffected
 			} else if liveRune == '/' && currentPos < len(codeRunes)-1 && codeRunes[currentPos+1] == '*' {
 				commentFlag = true
-				lastPos += 2 // open comment is 2 chars
-				currentPos = lastPos - 1
+				lastCommentStart = currentPos
+				if len(tokenBuffer) == 0 {
+					lastPos += 2 // open comment is 2 chars
+					currentPos = lastPos - 1
+				} else {
+					currentPos++
+				}
+				inTokenCommentPos += 2
 
 			} else if unicode.IsLower(liveRune) || unicode.IsDigit(liveRune) {
 				tokenBuffer = append(tokenBuffer, liveRune) // add to back
@@ -332,19 +350,29 @@ func Lex(filedata string) {
 
 		// get what we can from the buffer, tokenize it, jump forward to end of that token, and clean buffer
 		if evaluateBuffer {
+			// fmt.Println(string(tokenBuffer))
+
 			greedyCapture = evaluateTokenBuffer(tokenBuffer) // check what we have
 			newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)
-			lastPos += len(newToken.content) // find the offset based on chars taken
-			currentPos = lastPos - 1         // incremented at end of loop
 
-			if newToken.content == "/*" { // open block comment
-				commentFlag = true
+			// buffer spans a comment
+			if len(tokenBuffer) < currentPos-lastPos {
+				// token spans a comment
+				if lastPos+len(newToken.content) > lastCommentStart {
+					// println("spanned")
+					lastPos += len(newToken.content) + inTokenCommentPos
+					inTokenCommentPos = 0
+				} else {
+					lastPos += len(newToken.content) // find the offset based on chars taken
+				}
 			} else {
-				tokenStream[programNum] = append(tokenStream[programNum], newToken)
+				lastPos += len(newToken.content)
 			}
 
-			tokenBuffer = []rune{} // release old contents
+			currentPos = lastPos - 1 // incremented at end of loop
 
+			tokenStream[programNum] = append(tokenStream[programNum], newToken)
+			tokenBuffer = []rune{} // release old contents
 			evaluateBuffer = false
 		}
 
