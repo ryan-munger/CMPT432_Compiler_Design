@@ -1,0 +1,11 @@
+main(){
+    const float payment = 384.00;
+    float bal;
+    int month = 0;
+    bal = 15000;
+    while (bal > 0) {
+        printf("Month: %2d Balance: %10.2f\n", month, bal);
+        bal = bal - payment + 0.015 * bal;
+        month = month + 1;
+    }
+}
