@@ -17,9 +17,10 @@ type Location struct {
 }
 
 type Token struct {
-	tType    TokenType
-	location Location
-	content  string
+	tType       TokenType
+	location    Location
+	content     string
+	trueContent string
 }
 
 func TokensAreEqual(t1, t2 *Token) bool {

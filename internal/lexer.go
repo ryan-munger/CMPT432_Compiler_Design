@@ -97,52 +97,60 @@ func nextRune(target rune, codeRunes []rune, currentPos int) int {
 
 func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 	var tokenType TokenType
+	var formalName string
 	switch capture {
 	case "print", "while", "false", "true", "if":
 		tokenType = Keyword
-		Debug(fmt.Sprintf("%s [ %s ] found at (%d:%d)", strings.ToUpper(capture), capture, line, pos), "LEXER")
+		formalName = "KEYW_" + strings.ToUpper(capture)
 
 	case "string":
 		tokenType = Keyword
-		Debug(fmt.Sprintf("S_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+		formalName = "S_TYPE"
 
 	case "int":
 		tokenType = Keyword
-		Debug(fmt.Sprintf("I_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+		formalName = "I_TYPE"
 
 	case "boolean":
 		tokenType = Keyword
-		Debug(fmt.Sprintf("B_TYPE [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+		formalName = "B_TYPE"
 
 	case "==":
 		tokenType = Symbol
-		Debug(fmt.Sprintf("EQUAL_OP [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+		formalName = "EQUAL_OP"
 
 	case "!=":
 		tokenType = Symbol
-		Debug(fmt.Sprintf("N-EQUAL_OP [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+		formalName = "N-EQUAL_OP"
 
 	case " ":
 		tokenType = Character
-		Debug(fmt.Sprintf("CHAR [ (space) ] found at (%d:%d)", line, pos), "LEXER")
+		formalName = "CHAR"
 
 	default:
 		if len(capture) == 1 && isSymbol(rune(capture[0])) {
 			tokenType = Symbol
-			Debug(fmt.Sprintf("%s [ %s ] found at (%d:%d)", SymbolMap[rune(capture[0])], capture, line, pos), "LEXER")
+			formalName = SymbolMap[rune(capture[0])]
 		} else if unicode.IsDigit(rune(capture[0])) {
 			tokenType = Digit
-			Debug(fmt.Sprintf("DIGIT [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+			formalName = "DIGIT"
 		} else {
 			// char or identifier is based off quotes
 			if quoteFlag {
 				tokenType = Character
-				Debug(fmt.Sprintf("CHAR [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+				formalName = "CHAR"
 			} else {
 				tokenType = Identifier
-				Debug(fmt.Sprintf("ID [ %s ] found at (%d:%d)", capture, line, pos), "LEXER")
+				formalName = "ID"
 			}
 		}
+	}
+
+	// no ternary '?' in go :()
+	if capture == " " {
+		Debug(fmt.Sprintf("%s [ (space) ] found at (%d:%d)", formalName, line, pos), "LEXER")
+	} else {
+		Debug(fmt.Sprintf("%s [ %s ] found at (%d:%d)", formalName, capture, line, pos), "LEXER")
 	}
 
 	token := Token{
@@ -151,7 +159,8 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 			line:     line,
 			startPos: pos,
 		},
-		content: capture,
+		content:     formalName,
+		trueContent: capture,
 	}
 	return token
 }
