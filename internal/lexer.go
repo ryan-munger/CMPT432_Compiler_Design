@@ -393,14 +393,14 @@ func Lex(filedata string) {
 			// buffer spans a comment
 			if len(tokenBuffer) < currentPos-lastPos {
 				// token spans a comment
-				if lastPos+len(newToken.content) > lastCommentStart {
-					lastPos += len(newToken.content) + inTokenCommentPos
+				if lastPos+len(newToken.trueContent) > lastCommentStart {
+					lastPos += len(newToken.trueContent) + inTokenCommentPos
 					inTokenCommentPos = 0
 				} else {
-					lastPos += len(newToken.content) // find the offset based on chars taken
+					lastPos += len(newToken.trueContent) // find the offset based on chars taken
 				}
 			} else {
-				lastPos += len(newToken.content)
+				lastPos += len(newToken.trueContent)
 			}
 
 			currentPos = lastPos - 1 // incremented at end of loop
@@ -426,7 +426,7 @@ func Lex(filedata string) {
 
 	// ensure we have a program with tokens and that it terminated with $
 	if len(tokenStream) > 0 && len(tokenStream[len(tokenStream)-1]) > 0 &&
-		tokenStream[len(tokenStream)-1][len(tokenStream[len(tokenStream)-1])-1].content != "$" {
+		tokenStream[len(tokenStream)-1][len(tokenStream[len(tokenStream)-1])-1].content != "EOP" {
 
 		Warn("EOF reached before EOP [ $ ]; EOP token was automatically inserted.", "LEXER")
 		warningCount++
