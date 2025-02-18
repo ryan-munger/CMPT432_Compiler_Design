@@ -32,6 +32,11 @@ func wrongToken(expected string) {
 	parseError = true
 }
 
+func isTypeKeyword(candidate string) bool {
+	_, exists := TypeMap[candidate]
+	return exists
+}
+
 func Parse(tokenStream []Token, programNum int) {
 	// recover from error (will pass it up to lexer, then main)
 	defer func() {
@@ -93,23 +98,48 @@ func parseBlock() {
 	}
 }
 
+// [statement statementList] or epsilon
 func parseStatementList() {
-	Debug("! Parsing at StatementList Level !", "PARSER")
-
 	if parseError {
 		return
 	}
-	// parseStatement()
-	// parseStatementList()
-	epsilonProduction()
+
+	Debug("! Parsing at StatementList Level !", "PARSER")
+	parseStatement()
+	// [statement statementList] didn't work out
+	if parseError {
+		parseError = false
+		epsilonProduction()
+	} else {
+		parseStatementList()
+	}
 }
 
+// PrintStatement | AssignmentStatement | VarDecl | WhileStatement | IfStatement | Block
 func parseStatement() {
+	if parseError {
+		return
+	}
 	Debug("! Parsing at Statement Level !", "PARSER")
+	if liveToken.content == "KEYW_PRINT" && liveToken.tType == Keyword {
+		parsePrintStatement()
+	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
+		parseAssignmentStatement()
+	} else if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
+		parseVarDecl()
+	} else if liveToken.content == "KEYW_WHILE" && liveToken.tType == Keyword {
+		parseWhileStatement()
+	} else if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
+
+	} else if liveToken.content == "{" && liveToken.tType == Symbol {
+
+	} else {
+		wrongToken("")
+	}
 
 }
 
-// Match Print Keyword, Open Paren, Expr, Close Paren
+// Match Printz, Open Paren, Expr, Close Paren
 func parsePrintStatement() {
 	if parseError {
 		return
@@ -144,6 +174,148 @@ func parsePrintStatement() {
 func parseExpr() {
 	Debug("! Parsing at Expression Level !", "PARSER")
 
+}
+
+// ID, =, Expr
+func parseAssignmentStatement() {
+	if parseError {
+		return
+	}
+
+	Debug("! Parsing at AssignmentStatement Level !", "PARSER")
+	if liveToken.content == "ID" && liveToken.tType == Identifier {
+		consumeCurrentToken()
+	} else {
+		wrongToken("ID [ char ]")
+	}
+
+	if parseError {
+		return
+	} else if liveToken.content == "ASSIGN_OP" && liveToken.tType == Symbol {
+		consumeCurrentToken()
+	} else {
+		wrongToken("ASSIGN_OP [ = ]")
+	}
+
+	if parseError {
+		return
+	} else {
+		parseExpr()
+	}
+}
+
+// type, id
+func parseVarDecl() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at VarDecl Level !", "PARSER")
+
+	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
+		consumeCurrentToken()
+	} else {
+		wrongToken("type keyword {I_TYPE [ int ], B_TYPE [ boolean ], S_TYPE [ string ]}")
+	}
+
+	if parseError {
+		return
+	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
+		consumeCurrentToken()
+	} else {
+		wrongToken("ID [ char ]")
+	}
+}
+
+// while, BooleanExpr, Block
+func parseWhileStatement() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at WhileStatement Level !", "PARSER")
+
+	if liveToken.content == "KEYW_WHILE" && liveToken.tType == Keyword {
+		consumeCurrentToken()
+	} else {
+		wrongToken("KEYW_WHILE [ while ]")
+	}
+
+	if parseError {
+		return
+	} else {
+		parseBooleanExpr()
+	}
+
+	if parseError {
+		return
+	} else {
+		parseBlock()
+	}
+}
+
+// [(, Expr, boolop, Expr, )] | boolval
+func parseBooleanExpr() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at BooleanExpression Level !", "PARSER")
+
+	if liveToken.content == "OPEN_PAREN" && liveToken.tType == Symbol {
+		consumeCurrentToken()
+
+		parseExpr()
+
+		if parseError {
+			return
+		} else {
+			parseBoolOp()
+		}
+
+		if parseError {
+			return
+		} else {
+			parseExpr()
+		}
+
+		if parseError {
+			return
+		} else if liveToken.content == "CLOSE_PAREN" && liveToken.tType == Symbol {
+			consumeCurrentToken()
+		} else {
+			wrongToken("CLOSE_PAREN [ ) ]")
+		}
+
+	} else {
+		parseBoolVal()
+	}
+
+}
+
+// == | !=
+func parseBoolOp() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at BoolOp Level !", "PARSER")
+
+	if (liveToken.content == "EQUAL_OP" || liveToken.content == "N-EQUAL_OP") && liveToken.tType == Symbol {
+		consumeCurrentToken()
+	} else {
+		wrongToken("token in: {EQUAL_OP [ == ], N-EQUAL_OP [ != ]}")
+	}
+}
+
+// true | false
+func parseBoolVal() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at BoolVal Level !", "PARSER")
+
+	if (liveToken.content == "KEYW_TRUE" || liveToken.content == "KEYW_FALSE") && liveToken.tType == Keyword {
+		consumeCurrentToken()
+	} else {
+		wrongToken("token in: {KEYW_TRUE [ true ], KEYW_FALSE [ false ]}")
+	}
 }
 
 func epsilonProduction() {

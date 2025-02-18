@@ -103,17 +103,9 @@ func tokenize(capture string, line int, pos int, quoteFlag bool) Token {
 		tokenType = Keyword
 		formalName = "KEYW_" + strings.ToUpper(capture)
 
-	case "string":
+	case "string", "int", "boolean":
 		tokenType = Keyword
-		formalName = "S_TYPE"
-
-	case "int":
-		tokenType = Keyword
-		formalName = "I_TYPE"
-
-	case "boolean":
-		tokenType = Keyword
-		formalName = "B_TYPE"
+		formalName = TypeMap[capture]
 
 	case "==":
 		tokenType = Symbol

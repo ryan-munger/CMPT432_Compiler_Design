@@ -37,3 +37,9 @@ var SymbolMap = map[rune]string{
 	'"': "QUOTE",
 	'+': "ADD",
 }
+
+var TypeMap = map[string]string{
+	"string":  "S_TYPE",
+	"int":     "I_TYPE",
+	"boolean": "B_TYPE",
+}
