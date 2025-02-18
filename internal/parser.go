@@ -9,8 +9,7 @@ var liveToken Token
 var parseError bool = false
 var alternateWarning string
 
-// exported so any file can utilize the CST
-var CSTs []TokenTree
+var cstList []TokenTree
 var currentCST TokenTree
 
 func consumeCurrentToken(lastToken ...bool) {
@@ -60,14 +59,17 @@ func Parse(tokenStream []Token, programNum int) {
 
 	parseProgram()
 
+	// save off CST
+	cstList = append(cstList, currentCST)
+
 	if !parseError {
 		Pass(fmt.Sprintf("Parser successfully evaluated program %d with no errors.", programNum+1), "PARSER")
+		// currentCST.PrintTree()
+		SemanticAnalysis(cstList[programNum], tokenStream, programNum)
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
+		Info("Compilation halted due to parser error.", "GOPILER", true)
 	}
-
-	// save off CST
-	CSTs = append(CSTs, currentCST)
 
 	// reset global vars for next program
 	liveTokenIdx = 0
@@ -76,6 +78,7 @@ func Parse(tokenStream []Token, programNum int) {
 	alternateWarning = ""
 	// assign new empty slice (tokens no longer can update tokenStream)
 	tokens = []Token{}
+	currentCST = TokenTree{}
 }
 
 // match Block, EOP

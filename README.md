@@ -1,4 +1,7 @@
 # Gopiler by Ryan Munger
+This project is a compiler for a language described in language_grammar.pdf. It compiles this language to MOS 6502 machine code. It consists of a lexer, recursive descent parser, semantic analyzer, and code generator as seen below. Happy compiling!
+![Overview](./Labs/images/overview.jpg)
+
 
 Dear Alan: grade the main branch -- I am using feature branches. You can use either web or CLI mode as they are functionally equivalent (only output medium differs). You will probably opt for the CLI version but I still learned A TON whilst making the web version. Go is cool!
 
