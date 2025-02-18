@@ -1,5 +1,6 @@
 # Gopiler by Ryan Munger
-This project is a compiler for a language described in language_grammar.pdf. It compiles this language to MOS 6502 machine code. It consists of a lexer, recursive descent parser, semantic analyzer, and code generator as seen below. Happy compiling!
+This project is a compiler for a language described in language_grammar.pdf. It compiles this language to MOS 6502 machine code. It consists of a lexer, recursive descent parser, semantic analyzer, and code generator as seen below. Happy compiling! 
+<br> <br>
 ![Overview](./Labs/images/overview.jpg)
 
 
