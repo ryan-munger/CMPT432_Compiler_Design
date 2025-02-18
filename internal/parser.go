@@ -2,11 +2,16 @@ package internal
 
 import "fmt"
 
-// note: this slice will update the 2d tokenstream from lexer!
+// careful: this slice will update the 2d tokenstream from lexer!
 var tokens []Token
 var liveTokenIdx int = 0
 var liveToken Token
 var parseError bool = false
+var alternateWarning string
+
+// exported so any file can utilize the CST
+var CSTs []TokenTree
+var currentCST TokenTree
 
 func consumeCurrentToken(lastToken ...bool) {
 	// this is just go syntax for an optional argument (variadic arg -  really a slice of bools)
@@ -26,10 +31,11 @@ func consumeCurrentToken(lastToken ...bool) {
 }
 
 func wrongToken(expected string) {
-	Error(fmt.Sprintf("Error at (%d:%d). Expected %s. Found %s [ %s ].",
+	Error(fmt.Sprintf("Error at (%d:%d). Expected %s. Found %s [ %s ]. %s",
 		liveToken.location.line, liveToken.location.startPos, expected,
-		liveToken.content, liveToken.trueContent), "PARSER")
+		liveToken.content, liveToken.trueContent, alternateWarning), "PARSER")
 	parseError = true
+	alternateWarning = ""
 }
 
 func isTypeKeyword(candidate string) bool {
@@ -49,19 +55,27 @@ func Parse(tokenStream []Token, programNum int) {
 	tokens = tokenStream
 	// starts at first token (pos 0)
 	liveToken = tokens[liveTokenIdx]
+	// start new CST for this program
+	currentCST = TokenTree{}
+
 	parseProgram()
 
 	if !parseError {
-		Pass("Parser passed with no errors.", "PARSER")
+		Pass(fmt.Sprintf("Parser successfully evaluated program %d with no errors.", programNum+1), "PARSER")
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
 	}
 
+	// save off CST
+	CSTs = append(CSTs, currentCST)
+
 	// reset global vars for next program
-	tokens = []Token{}
 	liveTokenIdx = 0
 	liveToken = Token{}
 	parseError = false
+	alternateWarning = ""
+	// assign new empty slice (tokens no longer can update tokenStream)
+	tokens = []Token{}
 }
 
 // match Block, EOP
@@ -211,12 +225,15 @@ func parseIntExpr() {
 		wrongToken("DIGIT [ 0-9 ]")
 	}
 
+	// this one is optional since just a digit will suffice
 	if parseError {
 		return
 	} else if liveToken.content == "ADD" && liveToken.tType == Symbol {
 		consumeCurrentToken()
 
 		parseExpr()
+	} else if liveToken.content == "DIGIT" && liveToken.tType == Digit {
+		alternateWarning = "Hint: Possible missing ADD [ + ]."
 	}
 }
 
