@@ -52,9 +52,9 @@ func Parse(tokenStream []Token, programNum int) {
 	parseProgram()
 
 	if !parseError {
-		Pass("Parser passed", "PARSER")
+		Pass("Parser passed with no errors.", "PARSER")
 	} else {
-		Fail("Parser failed", "PARSER")
+		Fail("Parsing aborted due to an error.", "PARSER")
 	}
 }
 
@@ -134,11 +134,8 @@ func parseStatement() {
 		parseWhileStatement()
 	} else if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
 		parseIfStatement()
-	} else if liveToken.content == "{" && liveToken.tType == Symbol {
-		parseBlock()
 	} else {
-		wrongToken("statement containing: {PrintStatement | AssignmentStatement " +
-			"| VarDecl | WhileStatement | IfStatement | Block")
+		parseBlock()
 	}
 }
 
@@ -185,12 +182,13 @@ func parseExpr() {
 		parseIntExpr()
 	} else if liveToken.content == "QUOTE" && liveToken.tType == Symbol {
 		parseStringExpr()
-	} else if liveToken.content == "OPEN_PAREN" && liveToken.tType == Symbol {
+	} else if (liveToken.content == "OPEN_PAREN" && liveToken.tType == Symbol) ||
+		((liveToken.content == "KEYW_TRUE" || liveToken.content == "KEYW_FALSE") && liveToken.tType == Keyword) {
 		parseBooleanExpr()
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
 		consumeCurrentToken()
 	} else {
-		wrongToken("")
+		wrongToken("ID [ char ], IntExpr, StringExpr, or BooleanExpr")
 	}
 }
 
