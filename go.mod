@@ -3,8 +3,8 @@ module gopiler
 go 1.23.5
 
 require (
-	github.com/fatih/color v1.18.0
-	github.com/gin-gonic/gin v1.10.0
+	github.com/fatih/color v1.18.0 // cli coloring
+	github.com/gin-gonic/gin v1.10.0 // web
 )
 
 require (
