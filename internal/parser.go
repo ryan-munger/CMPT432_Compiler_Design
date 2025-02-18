@@ -56,6 +56,12 @@ func Parse(tokenStream []Token, programNum int) {
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
 	}
+
+	// reset global vars for next program
+	tokens = []Token{}
+	liveTokenIdx = 0
+	liveToken = Token{}
+	parseError = false
 }
 
 // match Block, EOP
