@@ -130,16 +130,16 @@ func parseStatement() {
 	} else if liveToken.content == "KEYW_WHILE" && liveToken.tType == Keyword {
 		parseWhileStatement()
 	} else if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
-
+		parseIfStatement()
 	} else if liveToken.content == "{" && liveToken.tType == Symbol {
-
+		parseBlock()
 	} else {
-		wrongToken("")
+		wrongToken("statement containing: {PrintStatement | AssignmentStatement " +
+			"| VarDecl | WhileStatement | IfStatement | Block")
 	}
-
 }
 
-// Match Printz, Open Paren, Expr, Close Paren
+// Match Print, Open Paren, Expr, Close Paren
 func parsePrintStatement() {
 	if parseError {
 		return
@@ -171,9 +171,90 @@ func parsePrintStatement() {
 	}
 }
 
+// IntExpr | StringExpr | BooleanExpr | ID
 func parseExpr() {
+	if parseError {
+		return
+	}
 	Debug("! Parsing at Expression Level !", "PARSER")
 
+	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
+		parseIntExpr()
+	} else if liveToken.content == "QUOTE" && liveToken.tType == Symbol {
+		parseStringExpr()
+	} else if liveToken.content == "OPEN_PAREN" && liveToken.tType == Symbol {
+		parseBooleanExpr()
+	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
+		consumeCurrentToken()
+	} else {
+		wrongToken("")
+	}
+}
+
+// [digit, intop, Expr] | digit
+func parseIntExpr() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at IntExpr Level !", "PARSER")
+
+	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
+		consumeCurrentToken()
+	} else {
+		wrongToken("DIGIT [ 0-9 ]")
+	}
+
+	if parseError {
+		return
+	} else if liveToken.content == "ADD" && liveToken.tType == Symbol {
+		consumeCurrentToken()
+
+		parseExpr()
+	}
+}
+
+// ", charlist, "
+func parseStringExpr() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at StringExpr Level !", "PARSER")
+
+	if liveToken.content == "QUOTE" && liveToken.tType == Symbol {
+		consumeCurrentToken()
+	} else {
+		wrongToken("QUOTE [ \" ]")
+	}
+
+	if parseError {
+		return
+	} else {
+		parseCharList()
+	}
+
+	if parseError {
+		return
+	} else if liveToken.content == "QUOTE" && liveToken.tType == Symbol {
+		consumeCurrentToken()
+	} else {
+		wrongToken("QUOTE [ \" ]")
+	}
+}
+
+// [char, CharList], [space, CharList], epsilon
+func parseCharList() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at CharList Level !", "PARSER")
+
+	// char includes space and chars
+	if liveToken.content == "CHAR" && liveToken.tType == Character {
+		consumeCurrentToken()
+		parseCharList()
+	} else {
+		epsilonProduction()
+	}
 }
 
 // ID, =, Expr
@@ -315,6 +396,32 @@ func parseBoolVal() {
 		consumeCurrentToken()
 	} else {
 		wrongToken("token in: {KEYW_TRUE [ true ], KEYW_FALSE [ false ]}")
+	}
+}
+
+// if, BooleanExpr, Block
+func parseIfStatement() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at IfStatement Level !", "PARSER")
+
+	if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
+		consumeCurrentToken()
+	} else {
+		wrongToken("KEYW_IF [ if ]")
+	}
+
+	if parseError {
+		return
+	} else {
+		parseBooleanExpr()
+	}
+
+	if parseError {
+		return
+	} else {
+		parseBlock()
 	}
 }
 
