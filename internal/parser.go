@@ -105,13 +105,16 @@ func parseStatementList() {
 	}
 
 	Debug("! Parsing at StatementList Level !", "PARSER")
-	parseStatement()
-	// [statement statementList] didn't work out
-	if parseError {
-		parseError = false
+	if liveToken.content == "CLOSE_BRACE" && liveToken.tType == Symbol {
 		epsilonProduction()
 	} else {
-		parseStatementList()
+		parseStatement()
+
+		if parseError {
+			return
+		} else {
+			parseStatementList()
+		}
 	}
 }
 
