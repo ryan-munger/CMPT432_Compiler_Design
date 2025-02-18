@@ -27,14 +27,14 @@ func verifyFile(inputFile string) string {
 
 func main() {
 	inputFile := flag.String("f", "", "String; Path to source for compilation")
-	tenseMode := flag.Bool("t", false, "Bool; Toggle Verbose Mode")
+	terseMode := flag.Bool("t", false, "Bool; Toggle Terse Mode (less detailed output)")
 	flag.Parse()
 
 	var filedata string = verifyFile(*inputFile)
-	internal.SetVerbose(!*tenseMode)
+	internal.SetVerbose(!*terseMode)
 	internal.SetWebMode(false)
 
-	internal.Info(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, !*tenseMode), "GOPILER", true)
+	internal.Info(fmt.Sprintf("Starting compilation of: %s with verbose mode: %t", *inputFile, !*terseMode), "GOPILER", true)
 
 	if len(filedata) == 0 {
 		internal.Warn("Source file empty. No compilation will be executed.", "GOPILER")
