@@ -34,7 +34,11 @@ func (node *Node) PrintNode(level int) {
 	}
 
 	if node.Token != nil {
-		fmt.Printf("{%s [ %s ]}\n", node.Token.content, node.Token.trueContent) // token
+		if node.Token.trueContent == " " {
+			fmt.Printf("{%s [ space ]}\n", node.Token.content) // token
+		} else {
+			fmt.Printf("{%s [ %s ]}\n", node.Token.content, node.Token.trueContent) // token
+		}
 	} else {
 		fmt.Println(node.Type) // non terminal
 	}
