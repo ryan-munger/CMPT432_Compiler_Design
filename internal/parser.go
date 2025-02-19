@@ -8,9 +8,11 @@ var liveTokenIdx int = 0
 var liveToken Token
 var parseError bool = false
 var alternateWarning string
+var pNum int // program num
+var currentParent *Node
 
+// hold on to the CSTs
 var cstList []TokenTree
-var currentCST TokenTree
 
 func consumeCurrentToken(lastToken ...bool) {
 	// this is just go syntax for an optional argument (variadic arg -  really a slice of bools)
@@ -21,6 +23,8 @@ func consumeCurrentToken(lastToken ...bool) {
 
 	Debug(fmt.Sprintf("\tFound terminal %s [ %s ] in token stream",
 		tokens[liveTokenIdx].content, tokens[liveTokenIdx].trueContent), "PARSER")
+	var newNode *Node = NewNode("Token", &tokens[liveTokenIdx])
+	currentParent.AddChild(newNode)
 
 	// don't go out of bounds
 	if !endOfTokens {
@@ -51,23 +55,23 @@ func Parse(tokenStream []Token, programNum int) {
 	}()
 
 	Info(fmt.Sprintf("Parsing program %d", programNum+1), "GOPILER", true)
+	pNum = programNum
 	tokens = tokenStream
 	// starts at first token (pos 0)
 	liveToken = tokens[liveTokenIdx]
 	// start new CST for this program
-	currentCST = TokenTree{}
+	cstList = append(cstList, TokenTree{})
 
 	parseProgram()
 
-	// save off CST
-	cstList = append(cstList, currentCST)
-
 	if !parseError {
 		Pass(fmt.Sprintf("Parser successfully evaluated program %d with no errors.", programNum+1), "PARSER")
-		// currentCST.PrintTree()
+		Info("Generated Concrete Syntax Tree (CST):", "GOPILER", true)
+		cstList[programNum].PrintTree()
 		SemanticAnalysis(cstList[programNum], tokenStream, programNum)
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
+		cstList[programNum] = TokenTree{} // free memory from the CST since it cannot be used
 		Info("Compilation halted due to parser error.", "GOPILER", true)
 	}
 
@@ -78,18 +82,23 @@ func Parse(tokenStream []Token, programNum int) {
 	alternateWarning = ""
 	// assign new empty slice (tokens no longer can update tokenStream)
 	tokens = []Token{}
-	currentCST = TokenTree{}
+	currentParent = nil
 }
 
 // match Block, EOP
 func parseProgram() {
 	Debug("! Parsing at Program Level !", "PARSER")
+	// start off our CST
+	var progRootNode *Node = NewNode("<Program>", nil)
+	cstList[pNum].rootNode = progRootNode
+	currentParent = cstList[pNum].rootNode
+
 	parseBlock()
 
 	if parseError {
 		return
 	}
-
+	currentParent = cstList[pNum].rootNode
 	Debug("! Parsing at Program Level !", "PARSER")
 	// don't consume if right as it is the end
 	if liveToken.content == "EOP" {
@@ -102,6 +111,10 @@ func parseProgram() {
 // match Open Brace, StatementList, Close Brace
 func parseBlock() {
 	Debug("! Parsing at Block Level !", "PARSER")
+	var blockNode *Node = NewNode("<Block>", nil)
+	currentParent.AddChild(blockNode)
+	currentParent = blockNode
+
 	if liveToken.content == "OPEN_BRACE" && liveToken.tType == Symbol {
 		consumeCurrentToken()
 	} else {
@@ -113,6 +126,7 @@ func parseBlock() {
 	if parseError {
 		return
 	}
+	currentParent = blockNode
 	Debug("! Parsing at Block Level !", "PARSER")
 	if liveToken.content == "CLOSE_BRACE" && liveToken.tType == Symbol {
 		consumeCurrentToken()
@@ -126,8 +140,11 @@ func parseStatementList() {
 	if parseError {
 		return
 	}
-
 	Debug("! Parsing at StatementList Level !", "PARSER")
+	var statementListNode *Node = NewNode("<StatementList>", nil)
+	currentParent.AddChild(statementListNode)
+	currentParent = statementListNode
+
 	if liveToken.content == "CLOSE_BRACE" && liveToken.tType == Symbol {
 		epsilonProduction()
 	} else {
@@ -136,6 +153,7 @@ func parseStatementList() {
 		if parseError {
 			return
 		} else {
+			currentParent = statementListNode
 			parseStatementList()
 		}
 	}
@@ -147,6 +165,10 @@ func parseStatement() {
 		return
 	}
 	Debug("! Parsing at Statement Level !", "PARSER")
+	var statementNode *Node = NewNode("<Statement>", nil)
+	currentParent.AddChild(statementNode)
+	currentParent = statementNode
+
 	if liveToken.content == "KEYW_PRINT" && liveToken.tType == Keyword {
 		parsePrintStatement()
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
@@ -160,6 +182,7 @@ func parseStatement() {
 	} else {
 		parseBlock()
 	}
+	currentParent = statementNode
 }
 
 // Match Print, Open Paren, Expr, Close Paren
@@ -167,8 +190,11 @@ func parsePrintStatement() {
 	if parseError {
 		return
 	}
-
 	Debug("! Parsing at PrintStatement Level !", "PARSER")
+	var printStatementNode *Node = NewNode("<PrintStatement>", nil)
+	currentParent.AddChild(printStatementNode)
+	currentParent = printStatementNode
+
 	if liveToken.content == "KEYW_PRINT" && liveToken.tType == Keyword {
 		consumeCurrentToken()
 	} else {
@@ -187,6 +213,7 @@ func parsePrintStatement() {
 		return
 	}
 	Debug("! Parsing at PrintStatement Level !", "PARSER")
+	currentParent = printStatementNode
 	if liveToken.content == "CLOSE_PAREN" && liveToken.tType == Symbol {
 		consumeCurrentToken()
 	} else {
@@ -200,6 +227,9 @@ func parseExpr() {
 		return
 	}
 	Debug("! Parsing at Expression Level !", "PARSER")
+	var exprNode *Node = NewNode("<Expr>", nil)
+	currentParent.AddChild(exprNode)
+	currentParent = exprNode
 
 	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		parseIntExpr()
@@ -221,6 +251,9 @@ func parseIntExpr() {
 		return
 	}
 	Debug("! Parsing at IntExpr Level !", "PARSER")
+	var intExprNode *Node = NewNode("<IntExpr>", nil)
+	currentParent.AddChild(intExprNode)
+	currentParent = intExprNode
 
 	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		consumeCurrentToken()
@@ -229,6 +262,7 @@ func parseIntExpr() {
 	}
 
 	// this one is optional since just a digit will suffice
+	currentParent = intExprNode
 	if parseError {
 		return
 	} else if liveToken.content == "ADD" && liveToken.tType == Symbol {
@@ -246,6 +280,9 @@ func parseStringExpr() {
 		return
 	}
 	Debug("! Parsing at StringExpr Level !", "PARSER")
+	var strExprNode *Node = NewNode("<StringExpr>", nil)
+	currentParent.AddChild(strExprNode)
+	currentParent = strExprNode
 
 	if liveToken.content == "QUOTE" && liveToken.tType == Symbol {
 		consumeCurrentToken()
@@ -256,9 +293,11 @@ func parseStringExpr() {
 	if parseError {
 		return
 	} else {
+		currentParent = strExprNode
 		parseCharList()
 	}
 
+	currentParent = strExprNode
 	if parseError {
 		return
 	} else if liveToken.content == "QUOTE" && liveToken.tType == Symbol {
@@ -274,6 +313,9 @@ func parseCharList() {
 		return
 	}
 	Debug("! Parsing at CharList Level !", "PARSER")
+	var charListNode *Node = NewNode("<CharList>", nil)
+	currentParent.AddChild(charListNode)
+	currentParent = charListNode
 
 	// char includes space and chars
 	if liveToken.content == "CHAR" && liveToken.tType == Character {
@@ -289,8 +331,11 @@ func parseAssignmentStatement() {
 	if parseError {
 		return
 	}
-
 	Debug("! Parsing at AssignmentStatement Level !", "PARSER")
+	var assignNode *Node = NewNode("<AssignmentStatement>", nil)
+	currentParent.AddChild(assignNode)
+	currentParent = assignNode
+
 	if liveToken.content == "ID" && liveToken.tType == Identifier {
 		consumeCurrentToken()
 	} else {
@@ -308,6 +353,7 @@ func parseAssignmentStatement() {
 	if parseError {
 		return
 	} else {
+		currentParent = assignNode
 		parseExpr()
 	}
 }
@@ -318,6 +364,9 @@ func parseVarDecl() {
 		return
 	}
 	Debug("! Parsing at VarDecl Level !", "PARSER")
+	var declNode *Node = NewNode("<VarDecl>", nil)
+	currentParent.AddChild(declNode)
+	currentParent = declNode
 
 	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
 		consumeCurrentToken()
@@ -340,6 +389,9 @@ func parseWhileStatement() {
 		return
 	}
 	Debug("! Parsing at WhileStatement Level !", "PARSER")
+	var whileNode *Node = NewNode("<WhileStatement>", nil)
+	currentParent.AddChild(whileNode)
+	currentParent = whileNode
 
 	if liveToken.content == "KEYW_WHILE" && liveToken.tType == Keyword {
 		consumeCurrentToken()
@@ -350,12 +402,14 @@ func parseWhileStatement() {
 	if parseError {
 		return
 	} else {
+		currentParent = whileNode
 		parseBooleanExpr()
 	}
 
 	if parseError {
 		return
 	} else {
+		currentParent = whileNode
 		parseBlock()
 	}
 }
@@ -366,6 +420,9 @@ func parseBooleanExpr() {
 		return
 	}
 	Debug("! Parsing at BooleanExpression Level !", "PARSER")
+	var boolExprNode *Node = NewNode("<BooleanExpression>", nil)
+	currentParent.AddChild(boolExprNode)
+	currentParent = boolExprNode
 
 	if liveToken.content == "OPEN_PAREN" && liveToken.tType == Symbol {
 		consumeCurrentToken()
@@ -375,12 +432,14 @@ func parseBooleanExpr() {
 		if parseError {
 			return
 		} else {
+			currentParent = boolExprNode
 			parseBoolOp()
 		}
 
 		if parseError {
 			return
 		} else {
+			currentParent = boolExprNode
 			parseExpr()
 		}
 
@@ -404,6 +463,9 @@ func parseBoolOp() {
 		return
 	}
 	Debug("! Parsing at BoolOp Level !", "PARSER")
+	var boolOpNode *Node = NewNode("<BoolOp>", nil)
+	currentParent.AddChild(boolOpNode)
+	currentParent = boolOpNode
 
 	if (liveToken.content == "EQUAL_OP" || liveToken.content == "N-EQUAL_OP") && liveToken.tType == Symbol {
 		consumeCurrentToken()
@@ -418,6 +480,9 @@ func parseBoolVal() {
 		return
 	}
 	Debug("! Parsing at BoolVal Level !", "PARSER")
+	var boolValNode *Node = NewNode("<BoolVal>", nil)
+	currentParent.AddChild(boolValNode)
+	currentParent = boolValNode
 
 	if (liveToken.content == "KEYW_TRUE" || liveToken.content == "KEYW_FALSE") && liveToken.tType == Keyword {
 		consumeCurrentToken()
@@ -432,6 +497,9 @@ func parseIfStatement() {
 		return
 	}
 	Debug("! Parsing at IfStatement Level !", "PARSER")
+	var ifNode *Node = NewNode("<IfStatement>", nil)
+	currentParent.AddChild(ifNode)
+	currentParent = ifNode
 
 	if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
 		consumeCurrentToken()
@@ -448,12 +516,21 @@ func parseIfStatement() {
 	if parseError {
 		return
 	} else {
+		currentParent = ifNode
 		parseBlock()
 	}
 }
 
 func epsilonProduction() {
 	/* This is an epsilon production
-	Nothing will occur here.
+	No real work will occur here.
 	Implemented for code readability */
+	Debug(fmt.Sprintf("\tEpsilon [ %c ] production", '\u03B5'), "PARSER")
+	var epsToken = Token{
+		tType:       Symbol,
+		content:     "EPS",
+		trueContent: "\u03B5",
+	}
+	var newNode *Node = NewNode("Token", &epsToken)
+	currentParent.AddChild(newNode)
 }
