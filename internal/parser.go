@@ -157,7 +157,7 @@ func parseStatementList() {
 	currentParent.AddChild(statementListNode)
 	currentParent = statementListNode
 
-	if _, exists := statementOptions[liveToken.content]; exists {
+	if _, exists := statementOptions[liveToken.content]; exists || isTypeKeyword(liveToken.trueContent) {
 		parseStatement()
 
 		if parseError {
@@ -254,7 +254,7 @@ func parseExpr() {
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
 		consumeCurrentToken()
 	} else {
-		wrongToken("ID [ char ], IntExpr, StringExpr, or BooleanExpr")
+		wrongToken("token in: {ID [ char ], IntExpr, StringExpr, BooleanExpr}")
 	}
 }
 

@@ -1,0 +1,9 @@
+/* Test case for incomplete BooleanExpr */
+{
+s = "strb"
+print(s)
+
+if (a != ) {
+print("true")
+}
+}$

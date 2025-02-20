@@ -1,0 +1,5 @@
+/*  Type inside of a String */
+{
+    boolean d
+    d = ("hi") != "string")
+}$
