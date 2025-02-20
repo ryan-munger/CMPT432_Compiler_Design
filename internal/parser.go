@@ -1,6 +1,9 @@
 package internal
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // careful: this slice will update the 2d tokenstream from lexer!
 var tokens []Token
@@ -66,8 +69,8 @@ func Parse(tokenStream []Token, programNum int) {
 
 	if !parseError {
 		Pass(fmt.Sprintf("Parser successfully evaluated program %d with no errors.", programNum+1), "PARSER")
-		Info("Generated Concrete Syntax Tree (CST):", "GOPILER", true)
-		cstList[programNum].PrintTree()
+		Info(fmt.Sprintf("Program %d Concrete Syntax Tree (CST):\n%s\n%s", programNum+1, strings.Repeat("-", 75),
+			cstList[programNum].drawTree()), "GOPILER", true)
 		SemanticAnalysis(cstList[programNum], tokenStream, programNum)
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")

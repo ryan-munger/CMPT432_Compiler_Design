@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"html"
 	"sync"
 
 	"github.com/fatih/color"
@@ -35,7 +36,7 @@ func appendLog(msg string) {
 func Debug(msg string, component string) {
 	logMsg := fmt.Sprintf("%-5s | %s --> %s", "DEBUG", component, msg)
 	if webMode && Verbose {
-		appendLog(fmt.Sprintf(`<span class="text-blue-400">%s</span><br>`, logMsg))
+		appendLog(fmt.Sprintf(`<span class="text-blue-400">%s</span><br>`, html.EscapeString(logMsg)))
 	} else if Verbose {
 		fmt.Print(color.BlueString(logMsg + "\n"))
 	}
@@ -44,7 +45,7 @@ func Debug(msg string, component string) {
 func Error(msg string, component string) {
 	logMsg := fmt.Sprintf("%-5s | %s --> %s", "ERROR", component, msg)
 	if webMode {
-		appendLog(fmt.Sprintf(`<span class="text-red-400">%s</span><br>`, logMsg))
+		appendLog(fmt.Sprintf(`<span class="text-red-400">%s</span><br>`, html.EscapeString(logMsg)))
 	} else {
 		color.Red(logMsg)
 	}
@@ -53,7 +54,7 @@ func Error(msg string, component string) {
 func Warn(msg string, component string) {
 	logMsg := fmt.Sprintf("%-5s | %s --> %s", "WARN", component, msg)
 	if webMode {
-		appendLog(fmt.Sprintf(`<span class="text-yellow-400">%s</span><br>`, logMsg))
+		appendLog(fmt.Sprintf(`<span class="text-yellow-400">%s</span><br>`, html.EscapeString(logMsg)))
 	} else {
 		color.Yellow(logMsg)
 	}
@@ -62,7 +63,7 @@ func Warn(msg string, component string) {
 func Pass(msg string, component string) {
 	logMsg := fmt.Sprintf("%-5s | %s --> %s", "PASS", component, msg)
 	if webMode {
-		appendLog(fmt.Sprintf(`<span class="text-green-400">%s</span><br>`, logMsg))
+		appendLog(fmt.Sprintf(`<span class="text-green-400">%s</span><br>`, html.EscapeString(logMsg)))
 	} else {
 		color.Green(logMsg)
 	}
@@ -71,7 +72,7 @@ func Pass(msg string, component string) {
 func Fail(msg string, component string) {
 	logMsg := fmt.Sprintf("%-5s | %s --> %s", "FAIL", component, msg)
 	if webMode {
-		appendLog(fmt.Sprintf(`<span class="text-red-500">%s</span><br>`, logMsg))
+		appendLog(fmt.Sprintf(`<span class="text-red-500">%s</span><br>`, html.EscapeString(logMsg)))
 	} else {
 		color.Red(logMsg)
 	}
@@ -84,7 +85,7 @@ func Info(msg string, component string, space bool) {
 	}
 
 	if webMode {
-		appendLog(fmt.Sprintf(`<span class="text-white">%s</span><br>`, logMsg))
+		appendLog(fmt.Sprintf(`<span class="text-white">%s</span><br>`, html.EscapeString(logMsg)))
 	} else {
 		fmt.Print(logMsg + "\n")
 	}

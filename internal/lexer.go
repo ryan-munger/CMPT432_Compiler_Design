@@ -55,7 +55,6 @@ func handleNewLine(line *int, lastPos *int, deadPos *int) {
 }
 
 func evaluateTokenBuffer(tokenBuffer []rune) string {
-	// fmt.Println(string(tokenBuffer))
 	match := tokenRe.FindStringSubmatch(string(tokenBuffer))
 	if match != nil {
 		return match[1]
@@ -193,25 +192,11 @@ func Lex(filedata string) {
 	var untermEndComment = false
 	var alreadyErrUntermComment = false // so we don't do it twice
 
-	// kick us off - but trust NOBODY - could be file of just whitespace
-	// if nextProgramExists(codeRunes, -1, &untermEndComment) {
-	// 	fmt.Println(untermEndComment)
-	// 	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
-	// } else {
-	// 	Warn("Code provided is only whitespace and/or comments! No tokens generated.", "LEXER")
-	// 	warningCount++
-	// 	tokenStream = append(tokenStream, []Token{})
-
-	// 	Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
-	// 		programNum+1, warningCount, 0), "LEXER")
-	// }
 	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
 
 	// extract tokens
 	for lastPos < len(codeRunes) {
 		liveRune = codeRunes[currentPos]
-		// println("Last: ", lastPos)
-		// fmt.Println(string(liveRune) + " live")
 
 		if quoteFlag && liveRune != '"' {
 			var currentCol = lastPos - deadPos + 1
@@ -258,7 +243,6 @@ func Lex(filedata string) {
 				// we still need to keep track of line despite comment
 				handleNewLine(&line, &lastPos, &deadPos)
 			} else {
-				// fmt.Println("Threw away " + string(liveRune))
 				if len(tokenBuffer) == 0 {
 					lastPos++ // throw it away
 				} else {
@@ -368,7 +352,6 @@ func Lex(filedata string) {
 
 			// EOF delimiter
 			if currentPos >= len(codeRunes)-1 {
-				// fmt.Println("This is the end...")
 				if len(tokenBuffer) > 0 { // no action if buffer empty
 					evaluateBuffer = true
 				}
@@ -378,7 +361,6 @@ func Lex(filedata string) {
 
 		// get what we can from the buffer, tokenize it, jump forward to end of that token, and clean buffer
 		if evaluateBuffer {
-			// fmt.Println(string(tokenBuffer))
 
 			greedyCapture = evaluateTokenBuffer(tokenBuffer) // check what we have
 			newToken = tokenize(greedyCapture, line, lastPos-deadPos+1, quoteFlag)

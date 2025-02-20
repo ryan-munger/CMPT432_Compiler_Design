@@ -9,6 +9,8 @@ Go does not have classes. However, you can define methods on types.
 A method is a function with a special receiver argument.
 The receiver appears in its own argument list between the func keyword and the method name. */
 
+var printTreeBuffer string // used to build str rep of tree
+
 // capitalize its fields for global access
 type Node struct {
 	Type     string // token (terminals), or name of parse block (expr, IfStatement, etc)
@@ -30,17 +32,17 @@ func (node *Node) AddChild(newChild *Node) {
 
 func (node *Node) PrintNode(level int) {
 	for i := 0; i < level; i++ {
-		fmt.Print("-")
+		printTreeBuffer += "-"
 	}
 
 	if node.Token != nil {
-		if node.Token.trueContent == " " {
-			fmt.Printf("{%s [ space ]}\n", node.Token.content) // token
+		if node.Token.trueContent == " " { // we have a token
+			printTreeBuffer += fmt.Sprintf("{%s [ space ]}\n", node.Token.content)
 		} else {
-			fmt.Printf("{%s [ %s ]}\n", node.Token.content, node.Token.trueContent) // token
+			printTreeBuffer += fmt.Sprintf("{%s [ %s ]}\n", node.Token.content, node.Token.trueContent)
 		}
 	} else {
-		fmt.Println(node.Type) // non terminal
+		printTreeBuffer += node.Type + "\n" // non terminal
 	}
 
 	for _, child := range node.Children {
@@ -48,8 +50,10 @@ func (node *Node) PrintNode(level int) {
 	}
 }
 
-func (tree *TokenTree) PrintTree() {
+func (tree *TokenTree) drawTree() string {
+	printTreeBuffer = ""
 	tree.rootNode.PrintNode(0)
+	return printTreeBuffer
 }
 
 func (node *Node) RemoveChild(target *Node) bool {
@@ -71,7 +75,7 @@ func RemoveNode(root *Node, target *Node) bool {
 
 	if (root.Token != nil && target.Token != nil && TokensAreEqual(root.Token, target.Token)) ||
 		(root.Type == target.Type && target.Token == nil) {
-		fmt.Println("Cannot remove root node directly")
+		// fmt.Println("Cannot remove root node directly")
 		return false
 	}
 
