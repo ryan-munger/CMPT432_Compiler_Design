@@ -20,11 +20,19 @@ var statementOptions map[string]struct{} = map[string]struct{}{
 	"ID":         {},
 	"KEYW_WHILE": {},
 	"KEYW_IF":    {},
-	"{":          {},
+	"OPEN_BRACE": {},
 }
 
 // hold on to the CSTs
 var cstList []TokenTree
+
+func startCst(pNum int) {
+	// if a program fails in lexer, it never even got to parse
+	// we still need to index using program num though
+	for len(cstList) <= pNum {
+		cstList = append(cstList, TokenTree{})
+	}
+}
 
 func consumeCurrentToken(lastToken ...bool) {
 	// this is just go syntax for an optional argument (variadic arg -  really a slice of bools)
@@ -72,7 +80,7 @@ func Parse(tokenStream []Token, programNum int) {
 	// starts at first token (pos 0)
 	liveToken = tokens[liveTokenIdx]
 	// start new CST for this program
-	cstList = append(cstList, TokenTree{})
+	startCst(programNum)
 
 	parseProgram()
 
@@ -84,7 +92,7 @@ func Parse(tokenStream []Token, programNum int) {
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
 		cstList[programNum] = TokenTree{} // free memory from the CST since it cannot be used
-		Info("Compilation halted due to parser error.", "GOPILER", true)
+		Info(fmt.Sprintf("Compilation of program %d aborted due to parser error.", programNum+1), "GOPILER", true)
 	}
 
 	// reset global vars for next program
@@ -192,7 +200,7 @@ func parseStatement() {
 		parseWhileStatement()
 	} else if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
 		parseIfStatement()
-	} else if liveToken.content == "{" && liveToken.tType == Symbol {
+	} else if liveToken.content == "OPEN_BRACE" && liveToken.tType == Symbol {
 		parseBlock()
 	}
 	currentParent = statementNode
