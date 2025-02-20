@@ -14,6 +14,15 @@ var alternateWarning string
 var pNum int // program num
 var currentParent *Node
 
+// options for statement token
+var statementOptions map[string]struct{} = map[string]struct{}{
+	"KEYW_PRINT": {},
+	"ID":         {},
+	"KEYW_WHILE": {},
+	"KEYW_IF":    {},
+	"{":          {},
+}
+
 // hold on to the CSTs
 var cstList []TokenTree
 
@@ -134,7 +143,7 @@ func parseBlock() {
 	if liveToken.content == "CLOSE_BRACE" && liveToken.tType == Symbol {
 		consumeCurrentToken()
 	} else {
-		wrongToken("CLOSE_BRACE [ { ]")
+		wrongToken("CLOSE_BRACE [ } ]")
 	}
 }
 
@@ -148,9 +157,7 @@ func parseStatementList() {
 	currentParent.AddChild(statementListNode)
 	currentParent = statementListNode
 
-	if liveToken.content == "CLOSE_BRACE" && liveToken.tType == Symbol {
-		epsilonProduction()
-	} else {
+	if _, exists := statementOptions[liveToken.content]; exists {
 		parseStatement()
 
 		if parseError {
@@ -159,6 +166,8 @@ func parseStatementList() {
 			currentParent = statementListNode
 			parseStatementList()
 		}
+	} else {
+		epsilonProduction()
 	}
 }
 
@@ -172,6 +181,7 @@ func parseStatement() {
 	currentParent.AddChild(statementNode)
 	currentParent = statementNode
 
+	// we can't get to this function unless one of these options is valid
 	if liveToken.content == "KEYW_PRINT" && liveToken.tType == Keyword {
 		parsePrintStatement()
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
@@ -182,7 +192,7 @@ func parseStatement() {
 		parseWhileStatement()
 	} else if liveToken.content == "KEYW_IF" && liveToken.tType == Keyword {
 		parseIfStatement()
-	} else {
+	} else if liveToken.content == "{" && liveToken.tType == Symbol {
 		parseBlock()
 	}
 	currentParent = statementNode
