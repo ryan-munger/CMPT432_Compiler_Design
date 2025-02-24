@@ -175,6 +175,9 @@ func parseStatementList() {
 			parseStatementList()
 		}
 	} else {
+		if liveToken.content != "OPEN_BRACE" {
+			alternateWarning = "Hint: Possibly missing element in: {PrintStatement, AssignmentStatement, VarDecl, WhileStatement, IfStatement, Block}"
+		}
 		epsilonProduction()
 	}
 }
