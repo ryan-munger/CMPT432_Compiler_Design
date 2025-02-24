@@ -310,6 +310,8 @@ func parseIntOp() {
 
 	if liveToken.content == "ADD" && liveToken.tType == Symbol {
 		consumeCurrentToken()
+	} else {
+		wrongToken("ADD [ + ]")
 	}
 }
 
@@ -325,6 +327,8 @@ func parseDigit() {
 
 	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		consumeCurrentToken()
+	} else {
+		wrongToken("DIGIT [ 0-9 ]")
 	}
 }
 
@@ -392,6 +396,8 @@ func parseChar() {
 
 	if liveToken.content == "CHAR" && liveToken.tType == Character {
 		consumeCurrentToken()
+	} else {
+		wrongToken("CHAR [ a-z | (space) ]")
 	}
 }
 
@@ -455,7 +461,7 @@ func parseVarDecl() {
 	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
 		parseType()
 	} else {
-		wrongToken("type keyword {I_TYPE [ int ], B_TYPE [ boolean ], S_TYPE [ string ]}")
+		wrongToken("type keyword in: {I_TYPE [ int ], B_TYPE [ boolean ], S_TYPE [ string ]}")
 	}
 
 	if parseError {
@@ -479,6 +485,8 @@ func parseType() {
 
 	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
 		consumeCurrentToken()
+	} else {
+		wrongToken("type keyword in: {I_TYPE [ int ], B_TYPE [ boolean ], S_TYPE [ string ]}")
 	}
 }
 
