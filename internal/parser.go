@@ -263,7 +263,7 @@ func parseExpr() {
 		((liveToken.content == "KEYW_TRUE" || liveToken.content == "KEYW_FALSE") && liveToken.tType == Keyword) {
 		parseBooleanExpr()
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
-		consumeCurrentToken()
+		parseID()
 	} else {
 		wrongToken("token in: {ID [ char ], IntExpr, StringExpr, BooleanExpr}")
 	}
@@ -280,7 +280,7 @@ func parseIntExpr() {
 	currentParent = intExprNode
 
 	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
-		consumeCurrentToken()
+		parseDigit()
 	} else {
 		wrongToken("DIGIT [ 0-9 ]")
 	}
@@ -295,6 +295,21 @@ func parseIntExpr() {
 		parseExpr()
 	} else if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		alternateWarning = "Hint: Possible missing ADD [ + ]."
+	}
+}
+
+// char
+func parseDigit() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at Digit Level !", "PARSER")
+	var charListNode *Node = NewNode("<Digit>", nil)
+	currentParent.AddChild(charListNode)
+	currentParent = charListNode
+
+	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
+		consumeCurrentToken()
 	}
 }
 
@@ -343,10 +358,25 @@ func parseCharList() {
 
 	// char includes space and chars
 	if liveToken.content == "CHAR" && liveToken.tType == Character {
-		consumeCurrentToken()
+		parseChar()
 		parseCharList()
 	} else {
 		epsilonProduction()
+	}
+}
+
+// char
+func parseChar() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at Char Level !", "PARSER")
+	var charListNode *Node = NewNode("<Char>", nil)
+	currentParent.AddChild(charListNode)
+	currentParent = charListNode
+
+	if liveToken.content == "CHAR" && liveToken.tType == Character {
+		consumeCurrentToken()
 	}
 }
 
@@ -361,7 +391,7 @@ func parseAssignmentStatement() {
 	currentParent = assignNode
 
 	if liveToken.content == "ID" && liveToken.tType == Identifier {
-		consumeCurrentToken()
+		parseID()
 	} else {
 		wrongToken("ID [ char ]")
 	}
@@ -379,6 +409,21 @@ func parseAssignmentStatement() {
 	} else {
 		currentParent = assignNode
 		parseExpr()
+	}
+}
+
+// ID
+func parseID() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at ID Level !", "PARSER")
+	var charListNode *Node = NewNode("<ID>", nil)
+	currentParent.AddChild(charListNode)
+	currentParent = charListNode
+
+	if liveToken.content == "ID" && liveToken.tType == Identifier {
+		consumeCurrentToken()
 	}
 }
 
@@ -401,7 +446,7 @@ func parseVarDecl() {
 	if parseError {
 		return
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
-		consumeCurrentToken()
+		parseID()
 	} else {
 		wrongToken("ID [ char ]")
 	}
