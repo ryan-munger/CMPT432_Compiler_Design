@@ -9,7 +9,7 @@ import (
 
 var tokenRe = regexp.MustCompile(`^(boolean|string|print|while|false|true|int|if|[a-z]|\d)\S*$`)
 
-func nextProgram(programNum *int, tokenStream *[][]Token, errors *int, warns *int) {
+func nextProgram(programNum *int, tokenStream *[][]Token, errors *int, warns *int, alreadyFailed *bool) {
 	*programNum++ // deref to update it
 	// add another array for the next program's tokens
 	*tokenStream = append(*tokenStream, []Token{})
@@ -19,6 +19,7 @@ func nextProgram(programNum *int, tokenStream *[][]Token, errors *int, warns *in
 	// reset
 	*errors = 0
 	*warns = 0
+	*alreadyFailed = false
 }
 
 // do we have another program after $? or just some whitespace or comment
@@ -62,15 +63,16 @@ func evaluateTokenBuffer(tokenBuffer []rune) string {
 	return "NOMATCH"
 }
 
-func passFailProgram(programNum int, errorCount int, warningCount int, tokenStream [][]Token) {
+func passFailProgram(programNum int, errorCount int, warningCount int, tokenStream [][]Token, alreadyFailed *bool) {
 	if errorCount == 0 {
 		Pass(fmt.Sprintf("Lexer processed program %d with %d warnings(s), producing %d tokens.",
 			programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
 		Parse(tokenStream[programNum], programNum)
 	} else {
 		Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
-		Info(fmt.Sprintf("Compilation of program %d aborted due to lexer error.", programNum+1), "GOPILER", true)
+		Info(fmt.Sprintf("Compilation of program %d aborted due to lexer error.", programNum+1), "GOPILER", false)
 		tokenStream[programNum] = []Token{} // release memory as tokens will never be used
+		*alreadyFailed = true
 	}
 }
 
@@ -189,10 +191,11 @@ func Lex(filedata string) {
 	var lastCommentStart int = 0
 	var inTokenCommentPos int = 0
 	// if comment after EOP but before EOF is unterminated throw err for last program
-	var untermEndComment = false
-	var alreadyErrUntermComment = false // so we don't do it twice
+	var untermEndComment bool = false
+	var alreadyErrUntermComment bool = false // so we don't do it twice
+	var alreadyFailed bool = false           // when we clear tokens on fail its not empty file issue
 
-	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+	nextProgram(&programNum, &tokenStream, &errorCount, &warningCount, &alreadyFailed)
 
 	// extract tokens
 	for lastPos < len(codeRunes) {
@@ -271,16 +274,16 @@ func Lex(filedata string) {
 					// special cases
 					if liveRune == '$' { // EOP
 						if nextProgramExists(codeRunes, currentPos, &untermEndComment) {
-							passFailProgram(programNum, errorCount, warningCount, tokenStream)
-							nextProgram(&programNum, &tokenStream, &errorCount, &warningCount)
+							passFailProgram(programNum, errorCount, warningCount, tokenStream, &alreadyFailed)
+							nextProgram(&programNum, &tokenStream, &errorCount, &warningCount, &alreadyFailed)
 						} else if untermEndComment {
 							Error("Unterminated comment after EOP.", "LEXER")
 							errorCount++
 							untermEndComment = false
 							alreadyErrUntermComment = true
-							passFailProgram(programNum, errorCount, warningCount, tokenStream)
+							passFailProgram(programNum, errorCount, warningCount, tokenStream, &alreadyFailed)
 						} else {
-							passFailProgram(programNum, errorCount, warningCount, tokenStream)
+							passFailProgram(programNum, errorCount, warningCount, tokenStream, &alreadyFailed)
 						}
 
 					} else if liveRune == '"' {
@@ -342,6 +345,12 @@ func Lex(filedata string) {
 					if unicode.IsUpper(liveRune) {
 						Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
 							"Hint: Capital letters are not permitted.", liveRune, line, lastPos-deadPos+1), "LEXER")
+					} else if liveRune == '!' {
+						Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
+							"Hint: possible malformed N-EQUAL_OP [ != ]", liveRune, line, lastPos-deadPos+1), "LEXER")
+					} else if liveRune == '/' || liveRune == '*' {
+						Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d); "+
+							"Hint: possible malformed comment.", liveRune, line, lastPos-deadPos+1), "LEXER")
 					} else {
 						Error(fmt.Sprintf("Invalid token [ %c ] found at (%d:%d)", liveRune, line, lastPos-deadPos+1), "LEXER")
 					}
@@ -410,9 +419,9 @@ func Lex(filedata string) {
 		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
 		tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
-		passFailProgram(programNum, errorCount, warningCount, tokenStream)
+		passFailProgram(programNum, errorCount, warningCount, tokenStream, &alreadyFailed)
 
-	} else if len(tokenStream[len(tokenStream)-1]) == 0 {
+	} else if !alreadyFailed && len(tokenStream[len(tokenStream)-1]) == 0 {
 		Warn("Code provided is only whitespace and/or comments! No tokens generated.", "LEXER")
 		warningCount++
 		Warn("EOF reached before EOP [ $ ]; EOP token was automatically inserted.", "LEXER")
@@ -422,6 +431,6 @@ func Lex(filedata string) {
 		newToken = tokenize("$", line, lastPos-deadPos+1, quoteFlag)
 		tokenStream[programNum] = append(tokenStream[programNum], newToken)
 
-		passFailProgram(programNum, errorCount, warningCount, tokenStream)
+		passFailProgram(programNum, errorCount, warningCount, tokenStream, &alreadyFailed)
 	}
 }

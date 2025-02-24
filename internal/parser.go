@@ -92,7 +92,7 @@ func Parse(tokenStream []Token, programNum int) {
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
 		cstList[programNum] = TokenTree{} // free memory from the CST since it cannot be used
-		Info(fmt.Sprintf("Compilation of program %d aborted due to parser error.", programNum+1), "GOPILER", true)
+		Info(fmt.Sprintf("Compilation of program %d aborted due to parser error.", programNum+1), "GOPILER", false)
 	}
 
 	// reset global vars for next program
