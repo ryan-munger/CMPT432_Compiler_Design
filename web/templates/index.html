@@ -36,8 +36,18 @@
         <!-- Input & Console Sections -->
         <div class="grid grid-cols-2 gap-6">
             <!-- Input Section -->
-            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold text-white mb-2">Input</h2>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md relative">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-semibold text-white">Input</h2>
+                    <!-- Test Selector Dropdown -->
+                    <select id="exampleSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">
+                        <option value="" disabled selected>Select Example</option>
+                        <option value="Hello-Compiler">Hello-Compiler</option>
+                        <option value="Multi-Program">Multi-Program</option>
+                        <option value="James-Bond-James">James-Bond-James</option>
+                        <option value="Lex-Without-Spaces">Lex-Without-Spaces</option>
+                    </select>
+                </div>
                 <textarea id="codeInput"
                     class="w-full h-[30rem] p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
                 <div class="flex gap-4 mt-4">
@@ -57,7 +67,6 @@
             </div>
         </div>
     </div>
-
 </body>
 
 </html>

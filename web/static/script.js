@@ -28,6 +28,33 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    const testSelector = document.getElementById("exampleSelector");
+    testSelector.addEventListener("change", function() {
+        const selectedTest = this.value;
+        if (selectedTest) {
+            loadExampleContent(selectedTest);
+        }
+    });
+
+    // Function to load test content
+    function loadExampleContent(testName) {        
+        fetch(`/static/examples/${testName}.txt`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${testName}.txt`);
+                }
+                return response.text();
+            })
+            .then(data => {
+                codeInput.value = data;
+                document.getElementById("consoleOutput").textContent = "";
+            })
+            .catch(error => {
+                codeInput.textContent = "Error loading test: " + error.message;
+                document.getElementById("consoleOutput").textContent = "";
+            });
+    }
+
     // Compile code function
     document.getElementById("compileButton").addEventListener("click", function () {
         const code = document.getElementById("codeInput").value;

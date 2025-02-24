@@ -1,0 +1,1 @@
+/*Long Test Case - Everything Except Boolean Declaration */{/* Int Declaration */intaintba=0b=0/* While Loop */while(a!=3){print(a)while(b!=3){print(b)b=1+bif(b==2){/*PrintStatement*/print("there is no spoon"/* This will do nothing */)}}b=0a=1+a}}$
