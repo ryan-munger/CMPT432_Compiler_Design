@@ -290,11 +290,26 @@ func parseIntExpr() {
 	if parseError {
 		return
 	} else if liveToken.content == "ADD" && liveToken.tType == Symbol {
-		consumeCurrentToken()
+		parseIntOp()
 
 		parseExpr()
 	} else if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		alternateWarning = "Hint: Possible missing ADD [ + ]."
+	}
+}
+
+// +
+func parseIntOp() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at IntOp Level !", "PARSER")
+	var charListNode *Node = NewNode("<IntOp>", nil)
+	currentParent.AddChild(charListNode)
+	currentParent = charListNode
+
+	if liveToken.content == "ADD" && liveToken.tType == Symbol {
+		consumeCurrentToken()
 	}
 }
 
@@ -438,7 +453,7 @@ func parseVarDecl() {
 	currentParent = declNode
 
 	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
-		consumeCurrentToken()
+		parseType()
 	} else {
 		wrongToken("type keyword {I_TYPE [ int ], B_TYPE [ boolean ], S_TYPE [ string ]}")
 	}
@@ -449,6 +464,21 @@ func parseVarDecl() {
 		parseID()
 	} else {
 		wrongToken("ID [ char ]")
+	}
+}
+
+// type keywords
+func parseType() {
+	if parseError {
+		return
+	}
+	Debug("! Parsing at Type Level !", "PARSER")
+	var charListNode *Node = NewNode("<Type>", nil)
+	currentParent.AddChild(charListNode)
+	currentParent = charListNode
+
+	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
+		consumeCurrentToken()
 	}
 }
 
