@@ -35,7 +35,7 @@ Dear Alan: grade the main branch -- I am using feature branches. You can use eit
    1. Add -e (expose) if you wish to open server to the internet (instead of localhost)
    2. -h will show information
 3. A POST request will send the user's code to the backend and get back the compiler log messages!
-![GUI](./Labs/images/gui.png)
+![GUI](./Labs/images/gui.jpg)
 
 # In this course I strive to:
 * Gain and demonstrate an understanding of the fundamental areas of compiler
