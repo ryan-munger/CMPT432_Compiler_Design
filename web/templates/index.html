@@ -18,9 +18,19 @@
                 <h1 class="text-6xl font-extrabold text-green-400">GOPILER</h1>
                 <span class="text-lg text-gray-400">Ryan Munger</span>
             </div>
-            <button id="verboseButton" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
-                Verbose Mode: ON
-            </button>
+            <div class="flex gap-4">
+                <!-- Show Grammar Button -->
+                <a href="../static/language_grammar.pdf" target="_blank">
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">
+                        Show Grammar
+                    </button>
+                </a>
+                <!-- Verbose Mode Button -->
+                <button id="verboseButton"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
+                    Verbose Mode: ON
+                </button>
+            </div>
         </div>
 
         <!-- Input & Console Sections -->
