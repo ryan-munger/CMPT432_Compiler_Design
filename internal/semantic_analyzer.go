@@ -12,7 +12,7 @@ var curParent *Node
 var prevParent *Node
 var mode string
 var nodeBuffer []*Node
-var charListBuffer string = ""
+var fillBuffer bool = true
 
 // stuff we do not want to see in AST ever
 var GarbageMap map[string]struct{} = map[string]struct{}{
@@ -123,6 +123,7 @@ func extractEssentials(node *Node) {
 			addAstNode(node)
 			mode = node.Type
 		}
+		// println(node.Type)
 
 	case "<PrintStatement>", "<AssignmentStatement>": // these are surprisingly the same under the hood
 		if node.Type == "<StatementList>" { // end of print or assign
@@ -140,36 +141,52 @@ func extractEssentials(node *Node) {
 		}
 
 	case "<VarDecl>":
-		if node.Type == "Token" {
-			addAstNode(node)
-		} else if len(curParent.Children) == 2 { // guaranteed from parser to have type and ID
-			println(prevParent.Type)
+		if node.Type == "<StatementList>" { // end of print or assign
 			moveUp()
+		} else if node.Type == "Token" && !isGarbage(node.Token.content) {
+			addAstNode(node)
 		}
 
-	// case "<WhileStatement>", "<IfStatement>":
-	// 	if node.Type == "<StatementList>" {
-	// 		moveUp()
-	// 	} else if node.Type == "Token" {
-	// 		addAstNode(node)
-	// 	} else if node.Type == "<Block>" {
-	// 		addAstNode(node)
-	// 	}
+	case "<WhileStatement>", "<IfStatement>":
+		if node.Type == "<StatementList>" {
+			moveUp()
+		} else if node.Type == "Token" && !isGarbage(node.Token.content) {
+			if node.Token.content == "EQUAL_OP" {
+				var eqNode = NewNode("<Equals>", nil)
+				addAstNode(eqNode)
+				for _, node := range nodeBuffer { // backfill under the operator parent
+					addAstNode(node)
+				}
+				fillBuffer = false
+				clearBuffer()
+
+			} else if node.Token.content == "N-EQUAL_OP" {
+				var neqNode = NewNode("<NotEquals>", nil)
+				addAstNode(neqNode)
+				for _, node := range nodeBuffer { // backfill under the operator parent
+					addAstNode(node)
+				}
+				fillBuffer = false
+				clearBuffer()
+
+			} else if fillBuffer { // we don't know if its == or != yet!!
+				nodeBuffer = append(nodeBuffer, node)
+
+			} else {
+				addAstNode(node)
+			}
+
+		} else if node.Type == "<Block>" {
+			fillBuffer = true // out of bool statement now
+			moveUp()          // added a node for bool that is not parent of block
+			addAstNode(node)
+			mode = "<Block>"
+		}
 
 	default:
-		mode = "<Block>"
+		println("defaulted")
 		// skip the node
 	}
-
-	// if node.Token != nil {
-	// 	if node.Token.trueContent == " " { // we have a token
-	// 		fmt.Printf("{%s [ space ]}\n", node.Token.content)
-	// 	} else {
-	// 		fmt.Printf("{%s [ %s ]}\n", node.Token.content, node.Token.trueContent)
-	// 	}
-	// } else {
-	// 	fmt.Println(node.Type) // non terminal
-	// }
 
 	for _, child := range node.Children {
 		extractEssentials(child) // Recursively print children
