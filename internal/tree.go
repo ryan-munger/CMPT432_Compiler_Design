@@ -26,6 +26,21 @@ func NewNode(nodeType string, token *Token) *Node {
 	return &Node{Type: nodeType, Token: token, Children: []*Node{}}
 }
 
+// copies the node but without the relationships (for building AST from CST)
+func CopyNode(original *Node) *Node {
+	if original == nil {
+		return nil
+	}
+
+	newNode := &Node{
+		Type:     original.Type,
+		Token:    original.Token, // Shallow copy of token (not modifying original token)
+		Children: []*Node{},      // Empty children
+	}
+
+	return newNode
+}
+
 func (node *Node) AddChild(newChild *Node) {
 	node.Children = append(node.Children, newChild)
 }
