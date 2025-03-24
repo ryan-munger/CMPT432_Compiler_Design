@@ -1,0 +1,20 @@
+{
+    string z
+    z = "bond"
+    string j
+    j = "james"
+    int i
+    i = 0
+    while(i != 3){
+        if(a == 0){
+            print(j)
+        }
+        if(a == 1) {
+            print(z)
+        }
+        if(a == 2){
+            print(j)
+        }
+        i = 1 + i
+    }
+}$
