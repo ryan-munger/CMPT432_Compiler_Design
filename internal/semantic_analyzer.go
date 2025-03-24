@@ -150,6 +150,10 @@ func extractEssentials(node *Node) {
 	case "<WhileStatement>", "<IfStatement>":
 		if node.Type == "<StatementList>" {
 			moveUp()
+
+		} else if node.Type == "Token" && node.Token.content == "OPEN_PAREN" { // starting another bool expr
+			fillBuffer = true
+
 		} else if node.Type == "Token" && !isGarbage(node.Token.content) {
 			if node.Token.content == "EQUAL_OP" {
 				var eqNode = NewNode("<Equals>", nil)
