@@ -13,6 +13,7 @@ var prevParent *Node
 var mode string
 var nodeBuffer []*Node
 var fillBuffer bool = true
+var additionParent *Node
 
 // stuff we do not want to see in AST ever
 var GarbageMap map[string]struct{} = map[string]struct{}{
@@ -26,6 +27,7 @@ var GarbageMap map[string]struct{} = map[string]struct{}{
 	"ASSIGN_OP":   {},
 	"QUOTE":       {},
 	"EPS":         {},
+	"EOP":         {},
 }
 
 func isGarbage(candidate string) bool {
@@ -121,20 +123,42 @@ func extractEssentials(node *Node) {
 		if node.Type == "<Block>" || node.Type == "<PrintStatement>" || node.Type == "<VarDecl>" ||
 			node.Type == "<AssignmentStatement>" || node.Type == "<WhileStatement>" || node.Type == "<IfStatement>" {
 			addAstNode(node)
+			additionParent = node
 			mode = node.Type
+		} else if node.Type == "Token" && node.Token.content == "CLOSE_BRACE" { // end block
+			println("CLOSE")
+			moveUp()
 		}
-		// println(node.Type)
 
 	case "<PrintStatement>", "<AssignmentStatement>": // these are surprisingly the same under the hood
 		if node.Type == "<StatementList>" { // end of print or assign
+			if len(nodeBuffer) != 0 { // release digit or ID bc add not present
+				for _, node := range nodeBuffer { // backfill under the operator parent
+					addAstNode(node)
+				}
+				clearBuffer()
+			}
+			println(prevParent.Type)
 			moveUp()
-		} else if node.Type == "Token" && node.Token.content == "EPS" { // end of a charlist
+
+		} else if node.Type == "Token" && node.Token.content == "QUOTE" && len(nodeBuffer) > 0 { // end of a charlist
 			var collapsedCharNode *Node = collapseCharList()
 			addAstNode(collapsedCharNode)
 
 		} else if node.Type == "Token" && !isGarbage(node.Token.content) { // leave out the fluff!
-			if node.Token.tType == Character { // need to collapse charList
+			if node.Token.tType == Character || node.Token.tType == Digit { // need to collapse charList or handle add
 				nodeBuffer = append(nodeBuffer, node)
+
+			} else if node.Token.content == "ADD" {
+				// do not impact prevParent so we can unravel the adds easily
+				var additionNode = NewNode("<Add>", nil)
+				curParent.AddChild(additionNode)
+				curParent = additionNode
+
+				for _, node := range nodeBuffer {
+					addAstNode(node)
+				}
+				clearBuffer()
 			} else {
 				addAstNode(node)
 			}
@@ -188,7 +212,12 @@ func extractEssentials(node *Node) {
 		}
 
 	default:
-		println("defaulted")
+		println("defaulted: ")
+		println(mode)
+		// // println(node.Type)
+		// if node.Type == "Token" {
+		// 	println(node.Token.content)
+		// }
 		// skip the node
 	}
 
