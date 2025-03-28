@@ -11,6 +11,7 @@ var (
 	curParent  *Node
 	prevParent *Node
 	nodeBuffer []*Node
+	bufferFlag bool = false
 )
 
 // Garbage tokens to filter out of AST
@@ -57,6 +58,13 @@ func collapseCharList() *Node {
 
 func clearNodeBuffer() {
 	nodeBuffer = []*Node{}
+}
+
+func dumpNodeBuffer() {
+	for _, node := range nodeBuffer {
+		curParent.AddChild(node)
+	}
+	clearNodeBuffer()
 }
 
 // Initialize AST for a program
@@ -138,7 +146,9 @@ func importantNodeAbstraction(node *Node) {
 }
 
 func transformIntExpr(node *Node) {
-
+	for _, child := range node.Children {
+		extractEssentials(child)
+	}
 }
 
 func transformStringExpr(node *Node) {
@@ -151,7 +161,10 @@ func transformStringExpr(node *Node) {
 }
 
 func transformBoolExpr(node *Node) {
-	println("Bool expr!")
+	bufferFlag = true // the boolop needs to be parent here
+	for _, child := range node.Children {
+		extractEssentials(child)
+	}
 }
 
 // individual token
@@ -161,9 +174,18 @@ func transformToken(node *Node) {
 	if node.Token != nil && !isGarbage(node.Token.content) {
 		tokenNode := CopyNode(node)
 
-		if node.Token.tType == Character {
-			nodeBuffer = append(nodeBuffer, node)
+		if node.Token.tType == Character || bufferFlag {
+			if node.Token.content == "EQUAL_OP" {
+				var eqNode *Node = NewNode("<Equals>", nil)
+				curParent.AddChild(eqNode)
 
+				prevParent = curParent
+				curParent = eqNode
+				dumpNodeBuffer()
+				bufferFlag = false
+			}
+
+			nodeBuffer = append(nodeBuffer, node)
 		} else {
 			curParent.AddChild(tokenNode)
 		}
