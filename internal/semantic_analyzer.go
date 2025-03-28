@@ -102,78 +102,32 @@ func extractEssentials(node *Node) {
 	// Handle different types of nodes
 	//	fmt.Printf("Node: %s \n", node.Type)
 	switch node.Type {
-	case "<Block>":
-		transformBlock(node)
-	case "<PrintStatement>":
-		transformPrintStatement(node)
-	case "<VarDecl>":
-		transformVarDecl(node)
-	case "<AssignmentStatement>":
-		transformAssignmentStatement(node)
-	case "<WhileStatement>":
-		transformWhileStatement(node)
-	case "<IfStatement>":
-		transformIfStatement(node)
+	case "<Block>", "<PrintStatement>", "<AssignmentStatement>", "<VarDecl>",
+		"<WhileStatement>", "<IfStatement>":
+		importantNodeAbstraction(node)
 	case "<IntExpr>":
 		transformIntExpr(node)
 	case "<StringExpr>":
 		transformStringExpr(node)
-	case "<BoolExpr>":
-		transformBooleanExpr(node)
+	case "<BooleanExpression>":
+		transformBoolExpr(node)
 	case "Token":
 		transformToken(node)
 	default:
-		// Recursively process children if not transformed
+		// the children of the node are important even if the node itself is not
 		for _, child := range node.Children {
 			extractEssentials(child)
 		}
 	}
 }
 
-// Transform Block node
-func transformBlock(node *Node) *Node {
-	blockNode := NewNode("<Block>", nil)
-	curParent.AddChild(blockNode)
-
-	// Temporarily set current parent to the new block node
-	prevParent = curParent
-	curParent = blockNode
-
-	// Process children of the block
-	for _, child := range node.Children {
-		extractEssentials(child)
-	}
-
-	// done with block
-	curParent = prevParent
-
-	return blockNode
-}
-
-// Transform Variable Declaration
-func transformVarDecl(node *Node) {
-	varDeclNode := NewNode("<VarDecl>", nil)
-	curParent.AddChild(varDeclNode)
-
-	prevParent = curParent
-	curParent = varDeclNode
-
-	// Collect type and ID
-	for _, child := range node.Children {
-		extractEssentials(child)
-	}
-
-	// Restore previous parent
-	curParent = prevParent
-}
-
 // Transform Assignment Statement
-func transformAssignmentStatement(node *Node) {
-	assignNode := NewNode("<AssignmentStatement>", nil)
-	curParent.AddChild(assignNode)
+func importantNodeAbstraction(node *Node) {
+	printNode := NewNode(node.Type, nil)
+	curParent.AddChild(printNode)
 
 	prevParent = curParent
-	curParent = assignNode
+	curParent = printNode
 
 	for _, child := range node.Children {
 		extractEssentials(child)
@@ -196,20 +150,8 @@ func transformStringExpr(node *Node) {
 	curParent.AddChild(concatNode)
 }
 
-func transformBooleanExpr(node *Node) {
-
-}
-
-func transformPrintStatement(node *Node) {
-
-}
-
-func transformIfStatement(node *Node) {
-
-}
-
-func transformWhileStatement(node *Node) {
-
+func transformBoolExpr(node *Node) {
+	println("Bool expr!")
 }
 
 // individual token
