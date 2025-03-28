@@ -5,18 +5,16 @@ import (
 	"strings"
 )
 
-// to store them in case needed later
-var astList []TokenTree
-var curAst TokenTree
-var curParent *Node
-var prevParent *Node
-var mode string
-var nodeBuffer []*Node
-var fillBuffer bool = true
-var additionParent *Node
+var (
+	astList    []TokenTree
+	curAst     TokenTree
+	curParent  *Node
+	prevParent *Node
+	nodeBuffer []*Node
+)
 
-// stuff we do not want to see in AST ever
-var GarbageMap map[string]struct{} = map[string]struct{}{
+// Garbage tokens to filter out of AST
+var GarbageMap = map[string]struct{}{
 	"KEYW_PRINT":  {},
 	"KEYW_WHILE":  {},
 	"KEYW_IF":     {},
@@ -30,64 +28,13 @@ var GarbageMap map[string]struct{} = map[string]struct{}{
 	"EOP":         {},
 }
 
+// Helper function to check if a token is garbage
 func isGarbage(candidate string) bool {
 	_, exists := GarbageMap[candidate]
 	return exists
 }
 
-func startAst(pNum int) {
-	// if a program fails in lexer, it never even got to parse
-	// we still need to index using program num though
-	for len(astList) <= pNum {
-		astList = append(astList, TokenTree{})
-		curAst = astList[pNum]
-		mode = "<Init>"
-	}
-}
-
-func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
-	// recover from error, pass it up to parser, lexer, main
-	defer func() {
-		if r := recover(); r != nil {
-			CriticalError("semantic analyzer", r)
-		}
-	}()
-
-	Info(fmt.Sprintf("Semantically Analyzing program %d", programNum+1), "GOPILER", true)
-
-	// build AST
-	Debug("Generating AST...", "SEMANTIC ANALYZER")
-	startAst(programNum)
-	buildAST(cst)
-	Info(fmt.Sprintf("Program %d Abstract Syntax Tree (AST):\n%s\n%s", programNum+1, strings.Repeat("-", 75),
-		curAst.drawTree()), "GOPILER", true)
-
-	// use AST
-
-}
-
-func buildAST(cst TokenTree) {
-	// explain
-	extractEssentials(cst.rootNode)
-}
-
-func addAstNode(node *Node) {
-	var newShallowCopy *Node = CopyNode(node)
-	curParent.AddChild(newShallowCopy)
-
-	// token leaves are never parents
-	if node.Type != "Token" {
-		prevParent = curParent
-		curParent = newShallowCopy
-	}
-}
-
-func moveUp() {
-	mode = prevParent.Type // moveUp
-	curParent = prevParent
-}
-
-// empty buffer of char nodes into one node w a string
+// empty buffer of char nodes into one node w a string value
 func collapseCharList() *Node {
 	var collapsedStr string = ""
 	for _, charNode := range nodeBuffer {
@@ -104,124 +51,179 @@ func collapseCharList() *Node {
 		trueContent: collapsedStr,
 	}
 
-	clearBuffer()
+	clearNodeBuffer()
 	return NewNode("Token", &collapsedCharToken)
 }
 
-func clearBuffer() {
+func clearNodeBuffer() {
 	nodeBuffer = []*Node{}
 }
 
+// Initialize AST for a program
+func initAst(pNum int) {
+	for len(astList) <= pNum {
+		astList = append(astList, TokenTree{})
+	}
+	curAst = astList[pNum]
+}
+
+// entry point
+func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
+	defer func() {
+		if r := recover(); r != nil {
+			CriticalError("semantic analyzer", r)
+		}
+	}()
+
+	Info(fmt.Sprintf("Semantically Analyzing program %d", programNum+1), "GOPILER", true)
+
+	// build AST from cst
+	Debug("Generating AST...", "SEMANTIC ANALYZER")
+
+	initAst(programNum)
+	buildAST(cst)
+
+	Info(fmt.Sprintf("Program %d Abstract Syntax Tree (AST):\n%s\n%s", programNum+1, strings.Repeat("-", 75),
+		curAst.drawTree()), "GOPILER", true)
+}
+
+// start recursion
+func buildAST(cst TokenTree) {
+	curAst.rootNode = CopyNode(cst.rootNode)
+	curParent = curAst.rootNode
+	// Process children of the root
+	for _, child := range cst.rootNode.Children {
+		extractEssentials(child)
+	}
+}
+
+// Recursive AST extraction
 func extractEssentials(node *Node) {
-	switch mode {
-	case "<Init>": // start the tree
-		curAst.rootNode = CopyNode(node) // will always be <program> node
-		curParent = curAst.rootNode
-		mode = "<Block>"
-
+	// Handle different types of nodes
+	//	fmt.Printf("Node: %s \n", node.Type)
+	switch node.Type {
 	case "<Block>":
-		if node.Type == "<Block>" || node.Type == "<PrintStatement>" || node.Type == "<VarDecl>" ||
-			node.Type == "<AssignmentStatement>" || node.Type == "<WhileStatement>" || node.Type == "<IfStatement>" {
-			addAstNode(node)
-			additionParent = node
-			mode = node.Type
-		} else if node.Type == "Token" && node.Token.content == "CLOSE_BRACE" { // end block
-			println("CLOSE")
-			moveUp()
-		}
-
-	case "<PrintStatement>", "<AssignmentStatement>": // these are surprisingly the same under the hood
-		if node.Type == "<StatementList>" { // end of print or assign
-			if len(nodeBuffer) != 0 { // release digit or ID bc add not present
-				for _, node := range nodeBuffer { // backfill under the operator parent
-					addAstNode(node)
-				}
-				clearBuffer()
-			}
-			println(prevParent.Type)
-			moveUp()
-
-		} else if node.Type == "Token" && node.Token.content == "QUOTE" && len(nodeBuffer) > 0 { // end of a charlist
-			var collapsedCharNode *Node = collapseCharList()
-			addAstNode(collapsedCharNode)
-
-		} else if node.Type == "Token" && !isGarbage(node.Token.content) { // leave out the fluff!
-			if node.Token.tType == Character || node.Token.tType == Digit { // need to collapse charList or handle add
-				nodeBuffer = append(nodeBuffer, node)
-
-			} else if node.Token.content == "ADD" {
-				// do not impact prevParent so we can unravel the adds easily
-				var additionNode = NewNode("<Add>", nil)
-				curParent.AddChild(additionNode)
-				curParent = additionNode
-
-				for _, node := range nodeBuffer {
-					addAstNode(node)
-				}
-				clearBuffer()
-			} else {
-				addAstNode(node)
-			}
-		}
-
+		transformBlock(node)
+	case "<PrintStatement>":
+		transformPrintStatement(node)
 	case "<VarDecl>":
-		if node.Type == "<StatementList>" { // end of print or assign
-			moveUp()
-		} else if node.Type == "Token" && !isGarbage(node.Token.content) {
-			addAstNode(node)
-		}
-
-	case "<WhileStatement>", "<IfStatement>":
-		if node.Type == "<StatementList>" {
-			moveUp()
-
-		} else if node.Type == "Token" && node.Token.content == "OPEN_PAREN" { // starting another bool expr
-			fillBuffer = true
-
-		} else if node.Type == "Token" && !isGarbage(node.Token.content) {
-			if node.Token.content == "EQUAL_OP" {
-				var eqNode = NewNode("<Equals>", nil)
-				addAstNode(eqNode)
-				for _, node := range nodeBuffer { // backfill under the operator parent
-					addAstNode(node)
-				}
-				fillBuffer = false
-				clearBuffer()
-
-			} else if node.Token.content == "N-EQUAL_OP" {
-				var neqNode = NewNode("<NotEquals>", nil)
-				addAstNode(neqNode)
-				for _, node := range nodeBuffer { // backfill under the operator parent
-					addAstNode(node)
-				}
-				fillBuffer = false
-				clearBuffer()
-
-			} else if fillBuffer { // we don't know if its == or != yet!!
-				nodeBuffer = append(nodeBuffer, node)
-
-			} else {
-				addAstNode(node)
-			}
-
-		} else if node.Type == "<Block>" {
-			fillBuffer = true // out of bool statement now
-			moveUp()          // added a node for bool that is not parent of block
-			addAstNode(node)
-			mode = "<Block>"
-		}
-
+		transformVarDecl(node)
+	case "<AssignmentStatement>":
+		transformAssignmentStatement(node)
+	case "<WhileStatement>":
+		transformWhileStatement(node)
+	case "<IfStatement>":
+		transformIfStatement(node)
+	case "<IntExpr>":
+		transformIntExpr(node)
+	case "<StringExpr>":
+		transformStringExpr(node)
+	case "<BoolExpr>":
+		transformBooleanExpr(node)
+	case "Token":
+		transformToken(node)
 	default:
-		println("defaulted: ")
-		println(mode)
-		// // println(node.Type)
-		// if node.Type == "Token" {
-		// 	println(node.Token.content)
-		// }
-		// skip the node
+		// Recursively process children if not transformed
+		for _, child := range node.Children {
+			extractEssentials(child)
+		}
+	}
+}
+
+// Transform Block node
+func transformBlock(node *Node) *Node {
+	blockNode := NewNode("<Block>", nil)
+	curParent.AddChild(blockNode)
+
+	// Temporarily set current parent to the new block node
+	prevParent = curParent
+	curParent = blockNode
+
+	// Process children of the block
+	for _, child := range node.Children {
+		extractEssentials(child)
 	}
 
+	// done with block
+	curParent = prevParent
+
+	return blockNode
+}
+
+// Transform Variable Declaration
+func transformVarDecl(node *Node) {
+	varDeclNode := NewNode("<VarDecl>", nil)
+	curParent.AddChild(varDeclNode)
+
+	prevParent = curParent
+	curParent = varDeclNode
+
+	// Collect type and ID
 	for _, child := range node.Children {
-		extractEssentials(child) // Recursively print children
+		extractEssentials(child)
+	}
+
+	// Restore previous parent
+	curParent = prevParent
+}
+
+// Transform Assignment Statement
+func transformAssignmentStatement(node *Node) {
+	assignNode := NewNode("<AssignmentStatement>", nil)
+	curParent.AddChild(assignNode)
+
+	prevParent = curParent
+	curParent = assignNode
+
+	for _, child := range node.Children {
+		extractEssentials(child)
+	}
+
+	// Restore previous parent
+	curParent = prevParent
+}
+
+func transformIntExpr(node *Node) {
+
+}
+
+func transformStringExpr(node *Node) {
+	// extract essentials will handle charlist collapse
+	for _, child := range node.Children {
+		extractEssentials(child)
+	}
+	var concatNode *Node = collapseCharList()
+	curParent.AddChild(concatNode)
+}
+
+func transformBooleanExpr(node *Node) {
+
+}
+
+func transformPrintStatement(node *Node) {
+
+}
+
+func transformIfStatement(node *Node) {
+
+}
+
+func transformWhileStatement(node *Node) {
+
+}
+
+// individual token
+func transformToken(node *Node) {
+	// don't add things like '{'
+	// if char, we want to collapse those
+	if node.Token != nil && !isGarbage(node.Token.content) {
+		tokenNode := CopyNode(node)
+
+		if node.Token.tType == Character {
+			nodeBuffer = append(nodeBuffer, node)
+
+		} else {
+			curParent.AddChild(tokenNode)
+		}
 	}
 }

@@ -464,6 +464,8 @@ func parseVarDecl() {
 		wrongToken("type keyword in: {I_TYPE [ int ], B_TYPE [ boolean ], S_TYPE [ string ]}")
 	}
 
+	currentParent = declNode
+
 	if parseError {
 		return
 	} else if liveToken.content == "ID" && liveToken.tType == Identifier {
