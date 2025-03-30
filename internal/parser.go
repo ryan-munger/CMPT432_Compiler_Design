@@ -291,7 +291,7 @@ func parseIntExpr() {
 		return
 	} else if liveToken.content == "ADD" && liveToken.tType == Symbol {
 		parseIntOp()
-
+		currentParent = intExprNode
 		parseExpr()
 	} else if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		alternateWarning = "Hint: Possible missing ADD [ + ]."
@@ -555,6 +555,7 @@ func parseBooleanExpr() {
 		if parseError {
 			return
 		} else if liveToken.content == "CLOSE_PAREN" && liveToken.tType == Symbol {
+			currentParent = boolExprNode
 			consumeCurrentToken()
 		} else {
 			wrongToken("CLOSE_PAREN [ ) ]")

@@ -76,27 +76,48 @@ func evaluateExprNodeBuffer() *Node {
 
 	var stringMode bool = false
 	var stringNodeBuffer []*Node
+	var currentParent *Node
 
 	for _, node := range nodeBuffer {
-
-		if node.Token.content == "QUOTE" { // start of string
+		switch node.Token.content {
+		case "QUOTE":
 			if stringMode {
-				// we have a string to make
-				var concatNode *Node = collapseCharList(stringNodeBuffer)
-				curParent.AddChild(concatNode)
-				stringNodeBuffer = []*Node{} // reset buff
+				// End of string: collapse nodes
+				concatNode := collapseCharList(stringNodeBuffer)
+				if currentParent != nil {
+					currentParent.AddChild(concatNode)
+				} else {
+					// if no parent set yet, we just have a string
+					// nothing else can follow so don't worry about it having kids
+					currentParent = concatNode
+				}
+				stringNodeBuffer = nil
 			}
-			stringMode = !stringMode // flip toggle
-		} else if stringMode {
-			stringNodeBuffer = append(stringNodeBuffer, node)
-		} else {
-			println(node.Token.content)
-		}
+			stringMode = !stringMode
 
+		// case "OPEN_PAREN":
+
+		// case "CLOSE_PAREN":
+
+		// case "EQUAL_OP", "N-EQUAL_OP", "ADD":
+
+		default:
+			if stringMode {
+				stringNodeBuffer = append(stringNodeBuffer, node)
+			}
+			// } else if currentParent != nil {
+			// 	currentParent.AddChild(node)
+			// } else {
+			// 	currentParent = node
+			// }
+		}
 	}
 
 	clearNodeBuffer()
-	return NewNode("OOPS", nil)
+	if currentParent == nil {
+		return &Node{Type: "EMPTY"} // Prevent returning nil
+	}
+	return currentParent
 }
 
 // Initialize AST for a program
@@ -175,6 +196,7 @@ func importantNodeAbstraction(node *Node) {
 
 	prevParent = curParent
 	curParent = importantNode
+	exprParent = importantNode
 
 	for _, child := range node.Children {
 		extractEssentials(child)
@@ -182,7 +204,6 @@ func importantNodeAbstraction(node *Node) {
 
 	// Restore previous parent
 	curParent = prevParent
-	exprParent = importantNode
 }
 
 // add everything to buffer so we can fix orderings
