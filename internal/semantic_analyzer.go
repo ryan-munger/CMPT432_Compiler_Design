@@ -6,11 +6,13 @@ import (
 )
 
 var (
-	astList      []TokenTree
-	curAst       TokenTree
-	curParent    *Node
-	prevParent   *Node
-	stringBuffer []*Node
+	astList             []TokenTree
+	curAst              TokenTree
+	curParent           *Node
+	prevParent          *Node
+	stringBuffer        []*Node
+	symbolTableTreeList []*SymbolTableTree
+	curSymbolTableTree  *SymbolTableTree
 )
 
 func clearStringBuffer() {
@@ -58,6 +60,7 @@ func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
 
 	// perform semantic analysis
 	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
+	initSymbolTableTree(programNum)
 	scopeTypeCheck()
 }
 
@@ -207,4 +210,12 @@ func collapseCharList() *Node {
 
 func scopeTypeCheck() {
 	Debug("Symbol tables and that jazz", "SEMANTIC ANALYZER")
+}
+
+func initSymbolTableTree(pNum int) {
+	for len(symbolTableTreeList) <= pNum {
+		symbolTableTreeList = append(symbolTableTreeList, &SymbolTableTree{})
+	}
+	curSymbolTableTree = symbolTableTreeList[pNum]
+	curSymbolTableTree.rootTable = NewSymbolTable("Scope 0")
 }
