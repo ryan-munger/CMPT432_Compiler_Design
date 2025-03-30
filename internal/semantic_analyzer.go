@@ -68,15 +68,18 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 
 	issueUsageWarnings(curSymbolTableTree.rootTable) // recursive
 	if errorCount == 0 {
-		Pass(fmt.Sprintf("Successfully analyzed program %d with 0 errors and %d warning(s).", programNum+1, warnCount), "SEMANTIC ANALYZER")
+		Pass(fmt.Sprintf("Successfully analyzed program %d with 0 errors and %d warning(s).",
+			programNum+1, warnCount), "SEMANTIC ANALYZER")
 		Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 52),
 			curSymbolTableTree.ToString()), "GOPILER", true)
 		CodeGeneration(curAst, programNum)
 	} else {
-		Fail(fmt.Sprintf("Semantic Analysis failed with %d error(s) and %d warning(s).", errorCount, warnCount), "SEMANTIC ANALYZER")
+		Fail(fmt.Sprintf("Semantic Analysis failed with %d error(s) and %d warning(s).",
+			errorCount, warnCount), "SEMANTIC ANALYZER")
 		astList[programNum] = TokenTree{}                    // free memory from the AST since it cannot be used
 		symbolTableTreeList[programNum] = &SymbolTableTree{} // free this up too
-		Info(fmt.Sprintf("Compilation of program %d aborted due to semantic analysis error(s).", programNum+1), "GOPILER", false)
+		Info(fmt.Sprintf("Compilation of program %d aborted due to semantic analysis error(s).",
+			programNum+1), "GOPILER", false)
 	}
 }
 
@@ -225,8 +228,6 @@ func collapseCharList() *Node {
 }
 
 func scopeTypeCheck(node *Node) {
-	println(node.Type)
-
 	switch node.Type {
 	case "<VarDecl>":
 		analyzeVarDecl(node)
@@ -250,9 +251,11 @@ func initSymbolTableTree(pNum int) {
 func issueUsageWarnings(table *SymbolTable) {
 	for _, entry := range table.entries {
 		if !entry.isInit {
-			Warn(fmt.Sprintf("ID [ %s ] was declared but never initialized.", entry.name), "SEMANTIC ANALYZER")
+			Warn(fmt.Sprintf("ID [ %s ] from scope [ %s ] was declared but never initialized.",
+				entry.name, table.scopeID), "SEMANTIC ANALYZER")
 		} else if !entry.beenUsed {
-			Warn(fmt.Sprintf("ID [ %s ] was declared and initialized but never used.", entry.name), "SEMANTIC ANALYZER")
+			Warn(fmt.Sprintf("ID [ %s ] from scope [ %s ] was declared and initialized but never used.",
+				entry.name, table.scopeID), "SEMANTIC ANALYZER")
 		}
 	}
 
@@ -269,7 +272,8 @@ func analyzeVarDecl(node *Node) {
 
 	if curSymbolTable.EntryExists(name) {
 		// id already used in this scope
-		Error(fmt.Sprintf("Declaration Error on (%d:%d): ID [ %s ] is already declared in scope [ %s ].", pos.line, pos.startPos, name, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
+		Error(fmt.Sprintf("Declaration Error on (%d:%d): ID [ %s ] is already declared in scope [ %s ].",
+			pos.line, pos.startPos, name, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
 		errorCount++
 	} else {
 		var dType string = node.Children[0].Token.trueContent
