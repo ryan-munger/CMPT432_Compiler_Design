@@ -7,13 +7,15 @@ import (
 
 var (
 	astList             []TokenTree
-	curAst              TokenTree
+	curAst              *TokenTree
 	curParent           *Node
 	prevParent          *Node
 	stringBuffer        []*Node
 	symbolTableTreeList []*SymbolTableTree
 	curSymbolTableTree  *SymbolTableTree
 	curSymbolTable      *SymbolTable
+	errorCount          int
+	warnCount           int
 )
 
 func clearStringBuffer() {
@@ -43,7 +45,7 @@ func isGarbage(candidate string) bool {
 }
 
 // entry point
-func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
+func SemanticAnalysis(cst TokenTree, programNum int) {
 	defer func() {
 		if r := recover(); r != nil {
 			CriticalError("semantic analyzer", r)
@@ -63,8 +65,19 @@ func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
 	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
 	initSymbolTableTree(programNum)
 	scopeTypeCheck(curAst.rootNode) // recursive traversal starting from root
-	Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 52),
-		curSymbolTableTree.ToString()), "GOPILER", true)
+
+	issueUsageWarnings(curSymbolTableTree.rootTable) // recursive
+	if errorCount == 0 {
+		Pass(fmt.Sprintf("Successfully analyzed program %d with 0 errors and %d warning(s).", programNum+1, warnCount), "SEMANTIC ANALYZER")
+		Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 52),
+			curSymbolTableTree.ToString()), "GOPILER", true)
+		CodeGeneration(curAst, programNum)
+	} else {
+		Fail(fmt.Sprintf("Semantic Analysis failed with %d error(s) and %d warning(s).", errorCount, warnCount), "SEMANTIC ANALYZER")
+		astList[programNum] = TokenTree{}                    // free memory from the AST since it cannot be used
+		symbolTableTreeList[programNum] = &SymbolTableTree{} // free this up too
+		Info(fmt.Sprintf("Compilation of program %d aborted due to semantic analysis error(s).", programNum+1), "GOPILER", false)
+	}
 }
 
 // Initialize AST for a program
@@ -72,7 +85,7 @@ func initAst(pNum int) {
 	for len(astList) <= pNum {
 		astList = append(astList, TokenTree{})
 	}
-	curAst = astList[pNum]
+	curAst = &astList[pNum]
 }
 
 // start recursion
@@ -234,16 +247,32 @@ func initSymbolTableTree(pNum int) {
 	curSymbolTable = curSymbolTableTree.rootTable
 }
 
+func issueUsageWarnings(table *SymbolTable) {
+	for _, entry := range table.entries {
+		if !entry.isInit {
+			Warn(fmt.Sprintf("ID [ %s ] was declared but never initialized.", entry.name), "SEMANTIC ANALYZER")
+		} else if !entry.beenUsed {
+			Warn(fmt.Sprintf("ID [ %s ] was declared and initialized but never used.", entry.name), "SEMANTIC ANALYZER")
+		}
+	}
+
+	for _, subTable := range table.subTables {
+		issueUsageWarnings(subTable)
+	}
+}
+
 // new symbol
 // children of varDecl: type id
 func analyzeVarDecl(node *Node) {
 	var name string = node.Children[1].Token.trueContent
+	var pos Location = node.Children[1].Token.location
+
 	if curSymbolTable.EntryExists(name) {
 		// id already used in this scope
-		// error here
+		Error(fmt.Sprintf("Declaration Error on (%d:%d): ID [ %s ] is already declared in scope [ %s ].", pos.line, pos.startPos, name, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
+		errorCount++
 	} else {
 		var dType string = node.Children[0].Token.trueContent
-		var pos Location = node.Children[1].Token.location
 		var entry *SymbolEntry = NewTableEntry(name, dType, pos)
 		curSymbolTable.AddEntry(name, entry)
 	}

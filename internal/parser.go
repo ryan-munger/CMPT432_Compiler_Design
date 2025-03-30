@@ -88,7 +88,7 @@ func Parse(tokenStream []Token, programNum int) {
 		Pass(fmt.Sprintf("Parser successfully evaluated program %d with no errors.", programNum+1), "PARSER")
 		Info(fmt.Sprintf("Program %d Concrete Syntax Tree (CST):\n%s\n%s", programNum+1, strings.Repeat("-", 75),
 			cstList[programNum].drawTree()), "GOPILER", true)
-		SemanticAnalysis(cstList[programNum], tokenStream, programNum)
+		SemanticAnalysis(cstList[programNum], programNum)
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
 		cstList[programNum] = TokenTree{} // free memory from the CST since it cannot be used

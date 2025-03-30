@@ -32,7 +32,7 @@ func NewSymbolTable(scopeID string) *SymbolTable {
 }
 
 func NewTableEntry(name string, dataType string, pos Location) *SymbolEntry {
-	return &SymbolEntry{name: name, dataType: dataType, position: pos, isInit: true, beenUsed: false}
+	return &SymbolEntry{name: name, dataType: dataType, position: pos, isInit: false, beenUsed: false}
 }
 
 func (table *SymbolTable) AddSubTable(subTable *SymbolTable) {
