@@ -25,7 +25,14 @@ type SymbolTableTree struct {
 }
 
 func NewSymbolTable(scopeID string) *SymbolTable {
-	return &SymbolTable{scopeID: scopeID}
+	var newTable *SymbolTable = &SymbolTable{scopeID: scopeID}
+	// must init map or can't add to it
+	newTable.entries = make(map[string]*SymbolEntry)
+	return newTable
+}
+
+func NewTableEntry(name string, dataType string, pos Location) *SymbolEntry {
+	return &SymbolEntry{name: name, dataType: dataType, position: pos, isInit: true, beenUsed: false}
 }
 
 func (table *SymbolTable) AddSubTable(subTable *SymbolTable) {
@@ -33,13 +40,24 @@ func (table *SymbolTable) AddSubTable(subTable *SymbolTable) {
 	table.subTables = append(table.subTables, subTable)
 }
 
+func (table *SymbolTable) AddEntry(id string, entry *SymbolEntry) {
+	table.entries[id] = entry
+}
+
+func (table *SymbolTable) EntryExists(id string) bool {
+	_, exists := table.entries[id]
+	return exists
+}
+
 func (stt *SymbolTableTree) ToString() string {
 	var sb strings.Builder
-	// headers
-	sb.WriteString("Scope\tName\tType\tLine\tStartPos\tInitialized\tUsed\n")
-	sb.WriteString(strings.Repeat("-", 80) + "\n")
 
-	// gather entries
+	// Table headers
+	sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-5s | %-9s | %-5s | %-5s |\n",
+		"Scope", "Name", "Type", "Position", "Init?", "Used?"))
+	sb.WriteString(strings.Repeat("-", 52) + "\n")
+
+	// Gather entries
 	stt.rootTable.collectEntries(&sb)
 	return sb.String()
 }
@@ -49,8 +67,10 @@ func (table *SymbolTable) collectEntries(sb *strings.Builder) {
 		return
 	}
 	for _, entry := range table.entries {
-		sb.WriteString(fmt.Sprintf("%s\t%s\t%s\t%d\t%d\t%t\t%t\n",
-			table.scopeID, entry.name, entry.dataType, entry.position.line, entry.position.startPos, entry.isInit, entry.beenUsed))
+		var pos string = fmt.Sprintf("(%d:%d)", entry.position.line, entry.position.startPos)
+		sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-5s | %-9s | %-5t | %-5t |\n",
+			table.scopeID, entry.name, entry.dataType, pos, entry.isInit, entry.beenUsed))
+		sb.WriteString(strings.Repeat("-", 52) + "\n")
 	}
 	for _, subTable := range table.subTables {
 		subTable.collectEntries(sb)

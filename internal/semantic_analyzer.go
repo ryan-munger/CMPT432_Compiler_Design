@@ -13,6 +13,7 @@ var (
 	stringBuffer        []*Node
 	symbolTableTreeList []*SymbolTableTree
 	curSymbolTableTree  *SymbolTableTree
+	curSymbolTable      *SymbolTable
 )
 
 func clearStringBuffer() {
@@ -61,7 +62,9 @@ func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
 	// perform semantic analysis
 	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
 	initSymbolTableTree(programNum)
-	scopeTypeCheck()
+	scopeTypeCheck(curAst.rootNode) // recursive traversal starting from root
+	Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 52),
+		curSymbolTableTree.ToString()), "GOPILER", true)
 }
 
 // Initialize AST for a program
@@ -208,8 +211,18 @@ func collapseCharList() *Node {
 	return NewNode("Token", &collapsedCharToken)
 }
 
-func scopeTypeCheck() {
-	Debug("Symbol tables and that jazz", "SEMANTIC ANALYZER")
+func scopeTypeCheck(node *Node) {
+	println(node.Type)
+
+	switch node.Type {
+	case "<VarDecl>":
+		analyzeVarDecl(node)
+
+	default:
+		for _, child := range node.Children {
+			scopeTypeCheck(child)
+		}
+	}
 }
 
 func initSymbolTableTree(pNum int) {
@@ -217,5 +230,22 @@ func initSymbolTableTree(pNum int) {
 		symbolTableTreeList = append(symbolTableTreeList, &SymbolTableTree{})
 	}
 	curSymbolTableTree = symbolTableTreeList[pNum]
-	curSymbolTableTree.rootTable = NewSymbolTable("Scope 0")
+	curSymbolTableTree.rootTable = NewSymbolTable("0")
+	curSymbolTable = curSymbolTableTree.rootTable
+}
+
+// new symbol
+// children of varDecl: type id
+func analyzeVarDecl(node *Node) {
+	var name string = node.Children[1].Token.trueContent
+	if curSymbolTable.EntryExists(name) {
+		// id already used in this scope
+		// error here
+	} else {
+		var dType string = node.Children[0].Token.trueContent
+		var pos Location = node.Children[1].Token.location
+		var entry *SymbolEntry = NewTableEntry(name, dType, pos)
+		curSymbolTable.AddEntry(name, entry)
+	}
+
 }
