@@ -13,6 +13,10 @@ var (
 	stringBuffer []*Node
 )
 
+func clearStringBuffer() {
+	stringBuffer = []*Node{}
+}
+
 // Garbage tokens to filter out of AST
 var GarbageMap = map[string]struct{}{
 	"KEYW_PRINT":  {},
@@ -35,39 +39,6 @@ func isGarbage(candidate string) bool {
 	return exists
 }
 
-func clearStringBuffer() {
-	stringBuffer = []*Node{}
-}
-
-// empty buffer of char nodes into one node w a string value
-func collapseCharList() *Node {
-	var collapsedStr string = ""
-	for _, charNode := range stringBuffer {
-		collapsedStr += charNode.Token.trueContent
-	}
-
-	var collapsedCharToken Token = Token{
-		tType: Character,
-		location: Location{ // use the first char for pos data
-			line:     stringBuffer[0].Token.location.line,
-			startPos: stringBuffer[0].Token.location.startPos,
-		},
-		content:     "STRING",
-		trueContent: collapsedStr,
-	}
-
-	clearStringBuffer()
-	return NewNode("Token", &collapsedCharToken)
-}
-
-// Initialize AST for a program
-func initAst(pNum int) {
-	for len(astList) <= pNum {
-		astList = append(astList, TokenTree{})
-	}
-	curAst = astList[pNum]
-}
-
 // entry point
 func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
 	defer func() {
@@ -80,12 +51,22 @@ func SemanticAnalysis(cst TokenTree, tokenStream []Token, programNum int) {
 
 	// build AST from cst
 	Debug("Generating AST...", "SEMANTIC ANALYZER")
-
 	initAst(programNum)
 	buildAST(cst)
-
 	Info(fmt.Sprintf("Program %d Abstract Syntax Tree (AST):\n%s\n%s", programNum+1, strings.Repeat("-", 75),
 		curAst.drawTree()), "GOPILER", true)
+
+	// perform semantic analysis
+	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
+	scopeTypeCheck()
+}
+
+// Initialize AST for a program
+func initAst(pNum int) {
+	for len(astList) <= pNum {
+		astList = append(astList, TokenTree{})
+	}
+	curAst = astList[pNum]
 }
 
 // start recursion
@@ -201,4 +182,29 @@ func transformToken(node *Node) {
 	} else if node.Type == "Token" && !isGarbage(node.Token.content) {
 		curParent.AddChild(tokenNode)
 	}
+}
+
+// empty buffer of char nodes into one node w a string value
+func collapseCharList() *Node {
+	var collapsedStr string = ""
+	for _, charNode := range stringBuffer {
+		collapsedStr += charNode.Token.trueContent
+	}
+
+	var collapsedCharToken Token = Token{
+		tType: Character,
+		location: Location{ // use the first char for pos data
+			line:     stringBuffer[0].Token.location.line,
+			startPos: stringBuffer[0].Token.location.startPos,
+		},
+		content:     "STRING",
+		trueContent: collapsedStr,
+	}
+
+	clearStringBuffer()
+	return NewNode("Token", &collapsedCharToken)
+}
+
+func scopeTypeCheck() {
+	Debug("Symbol tables and that jazz", "SEMANTIC ANALYZER")
 }
