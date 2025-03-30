@@ -35,6 +35,10 @@ func isGarbage(candidate string) bool {
 	return exists
 }
 
+func clearStringBuffer() {
+	stringBuffer = []*Node{}
+}
+
 // empty buffer of char nodes into one node w a string value
 func collapseCharList() *Node {
 	var collapsedStr string = ""
@@ -52,6 +56,7 @@ func collapseCharList() *Node {
 		trueContent: collapsedStr,
 	}
 
+	clearStringBuffer()
 	return NewNode("Token", &collapsedCharToken)
 }
 
@@ -163,12 +168,28 @@ func transformStringExpr(node *Node) {
 	curParent.AddChild(concatNode)
 }
 
-func transformBoolExpr(node *Node) {
-	// printTreeBuffer = ""
-	// node.PrintNode(0)
-	// println(printTreeBuffer)
-	// printTreeBuffer = ""
-	// println("-----------------------")
+// trust the parser!!! we can hardcode!!
+func transformBoolExpr(node *Node) { // ( expr boolop expr ) | boolVal
+	if len(node.Children) == 1 { // just a boolVal
+		extractEssentials(node.Children[0])
+	} else {
+		var boolOpNode *Node
+		if node.Children[2].Children[0].Token.content == "EQUAL_OP" {
+			boolOpNode = NewNode("<Equality>", nil)
+		} else { // N-EQUAL_OP
+			boolOpNode = NewNode("<Inequality>", nil)
+		}
+
+		var originalParent *Node = curParent
+
+		curParent.AddChild(boolOpNode)
+		curParent = boolOpNode
+
+		extractEssentials(node.Children[1]) // examine expr1
+		extractEssentials(node.Children[3]) // examine expr2
+
+		curParent = originalParent
+	}
 }
 
 // individual token
