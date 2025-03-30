@@ -6,13 +6,11 @@ import (
 )
 
 var (
-	astList    []TokenTree
-	curAst     TokenTree
-	curParent  *Node
-	prevParent *Node
-	nodeBuffer []*Node
-	bufferFlag bool = false
-	exprParent *Node
+	astList      []TokenTree
+	curAst       TokenTree
+	curParent    *Node
+	prevParent   *Node
+	stringBuffer []*Node
 )
 
 // Garbage tokens to filter out of AST
@@ -28,6 +26,7 @@ var GarbageMap = map[string]struct{}{
 	"QUOTE":       {},
 	"EPS":         {},
 	"EOP":         {},
+	"CHAR":        {},
 }
 
 // Helper function to check if a token is garbage
@@ -37,87 +36,23 @@ func isGarbage(candidate string) bool {
 }
 
 // empty buffer of char nodes into one node w a string value
-func collapseCharList(buffer []*Node) *Node {
+func collapseCharList() *Node {
 	var collapsedStr string = ""
-	for _, charNode := range buffer {
+	for _, charNode := range stringBuffer {
 		collapsedStr += charNode.Token.trueContent
 	}
 
 	var collapsedCharToken Token = Token{
 		tType: Character,
 		location: Location{ // use the first char for pos data
-			line:     buffer[0].Token.location.line,
-			startPos: buffer[0].Token.location.startPos,
+			line:     stringBuffer[0].Token.location.line,
+			startPos: stringBuffer[0].Token.location.startPos,
 		},
 		content:     "STRING",
 		trueContent: collapsedStr,
 	}
 
 	return NewNode("Token", &collapsedCharToken)
-}
-
-func clearNodeBuffer() {
-	nodeBuffer = []*Node{}
-}
-
-func dumpNodeBuffer() {
-	for _, node := range nodeBuffer {
-		curParent.AddChild(node)
-	}
-	clearNodeBuffer()
-}
-
-func evaluateExprNodeBuffer() *Node {
-	if len(nodeBuffer) == 1 { // just a digit or ID - not a full expr
-		var singleReturn *Node = nodeBuffer[0]
-		clearNodeBuffer()
-		return singleReturn
-	}
-
-	var stringMode bool = false
-	var stringNodeBuffer []*Node
-	var currentParent *Node
-
-	for _, node := range nodeBuffer {
-		switch node.Token.content {
-		case "QUOTE":
-			if stringMode {
-				// End of string: collapse nodes
-				concatNode := collapseCharList(stringNodeBuffer)
-				if currentParent != nil {
-					currentParent.AddChild(concatNode)
-				} else {
-					// if no parent set yet, we just have a string
-					// nothing else can follow so don't worry about it having kids
-					currentParent = concatNode
-				}
-				stringNodeBuffer = nil
-			}
-			stringMode = !stringMode
-
-		// case "OPEN_PAREN":
-
-		// case "CLOSE_PAREN":
-
-		// case "EQUAL_OP", "N-EQUAL_OP", "ADD":
-
-		default:
-			if stringMode {
-				stringNodeBuffer = append(stringNodeBuffer, node)
-			}
-			// } else if currentParent != nil {
-			// 	currentParent.AddChild(node)
-			// } else {
-			// 	currentParent = node
-			// }
-		}
-	}
-
-	clearNodeBuffer()
-	if currentParent == nil {
-		return &Node{Type: "EMPTY"} // Prevent returning nil
-	}
-	return currentParent
 }
 
 // Initialize AST for a program
@@ -160,25 +95,17 @@ func buildAST(cst TokenTree) {
 
 // Recursive AST extraction
 func extractEssentials(node *Node) {
-	// end of expr
-	if len(nodeBuffer) > 0 && (node.Type == "<StatementList>" || node.Type == "<Block>") {
-		bufferFlag = false
-
-		var exprTree *Node = evaluateExprNodeBuffer()
-		exprParent.AddChild(exprTree)
-		println("---------------------------\n")
-	}
 	// Handle different types of nodes
 	switch node.Type {
 	case "<Block>", "<PrintStatement>", "<AssignmentStatement>", "<VarDecl>",
 		"<WhileStatement>", "<IfStatement>":
 		importantNodeAbstraction(node)
 	case "<IntExpr>":
-		transformExpr(node)
+		transformIntExpr(node)
 	case "<StringExpr>":
-		transformExpr(node)
+		transformStringExpr(node)
 	case "<BooleanExpression>":
-		transformExpr(node)
+		transformBoolExpr(node)
 	case "Token":
 		transformToken(node)
 	default:
@@ -196,7 +123,6 @@ func importantNodeAbstraction(node *Node) {
 
 	prevParent = curParent
 	curParent = importantNode
-	exprParent = importantNode
 
 	for _, child := range node.Children {
 		extractEssentials(child)
@@ -207,20 +133,37 @@ func importantNodeAbstraction(node *Node) {
 }
 
 // add everything to buffer so we can fix orderings
-func transformExpr(node *Node) {
-	bufferFlag = true
+func transformIntExpr(node *Node) {
+	printTreeBuffer = ""
+	node.PrintNode(0)
+	println(printTreeBuffer)
+	printTreeBuffer = ""
+	println("-----------------------")
+}
+
+// buffer chars and combine them
+func transformStringExpr(node *Node) {
 	for _, child := range node.Children {
 		extractEssentials(child)
 	}
+	var concatNode *Node = collapseCharList()
+	curParent.AddChild(concatNode)
+}
+
+func transformBoolExpr(node *Node) {
+	printTreeBuffer = ""
+	node.PrintNode(0)
+	println(printTreeBuffer)
+	printTreeBuffer = ""
+	println("-----------------------")
 }
 
 // individual token
 func transformToken(node *Node) {
 	var tokenNode *Node = CopyNode(node)
 
-	// allow parens, etc into buffer to help expr parsing
-	if node.Type == "Token" && bufferFlag && node.Token.content != "EPS" {
-		nodeBuffer = append(nodeBuffer, tokenNode)
+	if node.Type == "Token" && node.Token.tType == Character {
+		stringBuffer = append(stringBuffer, node)
 	} else if node.Type == "Token" && !isGarbage(node.Token.content) {
 		curParent.AddChild(tokenNode)
 	}
