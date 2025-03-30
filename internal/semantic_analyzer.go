@@ -229,11 +229,27 @@ func collapseCharList() *Node {
 }
 
 func scopeTypeCheck(node *Node) {
+	println(node.Type)
 	switch node.Type {
+	// case "<Block>":
+	// 	// scope stuff!!
 	case "<VarDecl>":
 		analyzeVarDecl(node)
 	case "<AssignmentStatement>":
 		analyzeAssign(node)
+
+	// intexpr, boolexprs can have type and id issues within
+	case "<Addition>":
+		analyzeAdd(node)
+	case "<Equality>", "<Inequality>":
+		analyzeEquality(node)
+
+	// print an id
+	case "Token":
+		symbol, err := lookup(node.Token.trueContent, node.Token.location)
+		if err == nil {
+			symbol.beenUsed = true
+		}
 
 	default:
 		for _, child := range node.Children {
@@ -354,16 +370,14 @@ func analyzeAssign(node *Node) {
 			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "int")
 			assignError = true
 		}
-
-		analyzeExpr(assignTo)
+		analyzeAdd(assignTo)
 
 	case "<Equality>", "<Inequality>": // bool expr
 		if assignee.dataType != "boolean" {
 			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "boolean")
 			assignError = true
 		}
-
-		analyzeExpr(assignTo)
+		analyzeEquality(assignTo)
 	}
 
 	if assignError {
@@ -373,6 +387,10 @@ func analyzeAssign(node *Node) {
 	}
 }
 
-func analyzeExpr(node *Node) {
+func analyzeAdd(node *Node) {
+
+}
+
+func analyzeEquality(node *Node) {
 
 }
