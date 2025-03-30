@@ -53,9 +53,9 @@ func (stt *SymbolTableTree) ToString() string {
 	var sb strings.Builder
 
 	// Table headers
-	sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-5s | %-9s | %-5s | %-5s |\n",
+	sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-7s | %-9s | %-5s | %-5s |\n",
 		"Scope", "Name", "Type", "Position", "Init?", "Used?"))
-	sb.WriteString(strings.Repeat("-", 52) + "\n")
+	sb.WriteString(strings.Repeat("-", 54) + "\n")
 
 	// Gather entries
 	stt.rootTable.collectEntries(&sb)
@@ -68,9 +68,9 @@ func (table *SymbolTable) collectEntries(sb *strings.Builder) {
 	}
 	for _, entry := range table.entries {
 		var pos string = fmt.Sprintf("(%d:%d)", entry.position.line, entry.position.startPos)
-		sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-5s | %-9s | %-5t | %-5t |\n",
+		sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-7s | %-9s | %-5t | %-5t |\n",
 			table.scopeID, entry.name, entry.dataType, pos, entry.isInit, entry.beenUsed))
-		sb.WriteString(strings.Repeat("-", 52) + "\n")
+		sb.WriteString(strings.Repeat("-", 54) + "\n")
 	}
 	for _, subTable := range table.subTables {
 		subTable.collectEntries(sb)

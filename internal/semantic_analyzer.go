@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -70,7 +71,7 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 	if errorCount == 0 {
 		Pass(fmt.Sprintf("Successfully analyzed program %d with 0 errors and %d warning(s).",
 			programNum+1, warnCount), "SEMANTIC ANALYZER")
-		Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 52),
+		Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 54),
 			curSymbolTableTree.ToString()), "GOPILER", true)
 		CodeGeneration(curAst, programNum)
 	} else {
@@ -231,6 +232,8 @@ func scopeTypeCheck(node *Node) {
 	switch node.Type {
 	case "<VarDecl>":
 		analyzeVarDecl(node)
+	case "<AssignmentStatement>":
+		analyzeAssign(node)
 
 	default:
 		for _, child := range node.Children {
@@ -246,6 +249,25 @@ func initSymbolTableTree(pNum int) {
 	curSymbolTableTree = symbolTableTreeList[pNum]
 	curSymbolTableTree.rootTable = NewSymbolTable("0")
 	curSymbolTable = curSymbolTableTree.rootTable
+}
+
+// find an entry in accessible tables, pos is just for err reporting
+func lookup(name string, pos Location) (*SymbolEntry, error) {
+	var searchTable *SymbolTable = curSymbolTable
+	for {
+		if searchTable.EntryExists(name) {
+			return searchTable.entries[name], nil
+
+		} else if searchTable.parentTable != nil {
+			searchTable = searchTable.parentTable // look above
+
+		} else {
+			Error(fmt.Sprintf("Undeclared variable (%d:%d): ID [ %s ] was used but not declared",
+				pos.line, pos.startPos, name), "SEMANTIC ANALYZER")
+			errorCount++
+			return nil, errors.New("symbol not found")
+		}
+	}
 }
 
 func issueUsageWarnings(table *SymbolTable) {
@@ -264,6 +286,11 @@ func issueUsageWarnings(table *SymbolTable) {
 	}
 }
 
+func typeMismatch(operation string, pos Location, leftType string, rightType string) {
+	Error(fmt.Sprintf("Type mismatch on (%d:%d): cannot %s type [ %s ] to type [ %s ]",
+		pos.line, pos.startPos, operation, rightType, leftType), "SEMANTIC ANALYZER")
+}
+
 // new symbol
 // children of varDecl: type id
 func analyzeVarDecl(node *Node) {
@@ -280,5 +307,56 @@ func analyzeVarDecl(node *Node) {
 		var entry *SymbolEntry = NewTableEntry(name, dType, pos)
 		curSymbolTable.AddEntry(name, entry)
 	}
+}
 
+func analyzeAssign(node *Node) {
+	assignee, err := lookup(node.Children[0].Token.trueContent, node.Children[0].Token.location)
+	// assignee does not exist, we are done here
+	if err != nil {
+		return
+	}
+
+	var assignError bool
+	var assignTo *Node = node.Children[1]
+
+	switch assignTo.Type {
+	case "Token": // digit, str, id, bool
+		if assignTo.Token.tType == Digit {
+			if assignee.dataType != "int" {
+				typeMismatch("assign", assignTo.Token.location, assignee.dataType, "int")
+				assignError = true
+			}
+		} else if assignTo.Token.content == "STRING" {
+			if assignee.dataType != "string" {
+				typeMismatch("assign", assignTo.Token.location, assignee.dataType, "string")
+				assignError = true
+			}
+		} else if assignTo.Token.tType == Identifier {
+			assignedToSymbol, err := lookup(assignTo.Token.trueContent, assignTo.Token.location)
+			if err != nil {
+				return // id we are assigning to doesn't exist
+			}
+
+			if assignee.dataType != assignedToSymbol.dataType {
+				typeMismatch("assign", assignTo.Token.location, assignee.dataType, assignedToSymbol.dataType)
+				assignError = true
+			}
+		} else {
+			if assignee.dataType != "boolean" {
+				typeMismatch("assign", assignTo.Token.location, assignee.dataType, "boolean")
+				assignError = true
+			}
+		}
+
+	case "<Addition>": // int expr
+
+	case "<Equality>", "<Inequality>": // bool expr
+
+	}
+
+	if assignError {
+		errorCount++
+	} else {
+		assignee.isInit = true
+	}
 }

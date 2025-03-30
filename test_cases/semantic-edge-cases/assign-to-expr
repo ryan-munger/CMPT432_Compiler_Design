@@ -1,0 +1,8 @@
+{
+    int a
+    a = 1 + 2 + 3
+    string b
+    b = "test"
+    boolean c
+    c = ("a" == "a")
+} $

@@ -1,0 +1,6 @@
+{
+    int a
+    boolean b
+    b = true
+    a = b
+}
