@@ -134,11 +134,24 @@ func importantNodeAbstraction(node *Node) {
 
 // add everything to buffer so we can fix orderings
 func transformIntExpr(node *Node) {
-	printTreeBuffer = ""
-	node.PrintNode(0)
-	println(printTreeBuffer)
-	printTreeBuffer = ""
-	println("-----------------------")
+	if len(node.Children) == 1 { // just an int
+		extractEssentials(node.Children[0])
+	} else { // we have an intop! 3 parts - digit intop expr
+		var originalParent *Node = curParent
+
+		var additionNode *Node = NewNode("<Addition>", nil)
+		curParent.AddChild(additionNode)
+
+		curParent = additionNode
+
+		// add the digit as a child
+		curParent.AddChild(CopyNode(node.Children[0].Children[0]))
+		// examine the expression following
+		extractEssentials(node.Children[2])
+
+		// Restore previous parent
+		curParent = originalParent
+	}
 }
 
 // buffer chars and combine them
@@ -151,11 +164,11 @@ func transformStringExpr(node *Node) {
 }
 
 func transformBoolExpr(node *Node) {
-	printTreeBuffer = ""
-	node.PrintNode(0)
-	println(printTreeBuffer)
-	printTreeBuffer = ""
-	println("-----------------------")
+	// printTreeBuffer = ""
+	// node.PrintNode(0)
+	// println(printTreeBuffer)
+	// printTreeBuffer = ""
+	// println("-----------------------")
 }
 
 // individual token
