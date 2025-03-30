@@ -310,7 +310,8 @@ func analyzeVarDecl(node *Node) {
 }
 
 func analyzeAssign(node *Node) {
-	assignee, err := lookup(node.Children[0].Token.trueContent, node.Children[0].Token.location)
+	var assigneeNode *Node = node.Children[0]
+	assignee, err := lookup(assigneeNode.Token.trueContent, node.Children[0].Token.location)
 	// assignee does not exist, we are done here
 	if err != nil {
 		return
@@ -323,12 +324,12 @@ func analyzeAssign(node *Node) {
 	case "Token": // digit, str, id, bool
 		if assignTo.Token.tType == Digit {
 			if assignee.dataType != "int" {
-				typeMismatch("assign", assignTo.Token.location, assignee.dataType, "int")
+				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "int")
 				assignError = true
 			}
 		} else if assignTo.Token.content == "STRING" {
 			if assignee.dataType != "string" {
-				typeMismatch("assign", assignTo.Token.location, assignee.dataType, "string")
+				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "string")
 				assignError = true
 			}
 		} else if assignTo.Token.tType == Identifier {
@@ -338,20 +339,31 @@ func analyzeAssign(node *Node) {
 			}
 
 			if assignee.dataType != assignedToSymbol.dataType {
-				typeMismatch("assign", assignTo.Token.location, assignee.dataType, assignedToSymbol.dataType)
+				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, assignedToSymbol.dataType)
 				assignError = true
 			}
 		} else {
 			if assignee.dataType != "boolean" {
-				typeMismatch("assign", assignTo.Token.location, assignee.dataType, "boolean")
+				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "boolean")
 				assignError = true
 			}
 		}
 
 	case "<Addition>": // int expr
+		if assignee.dataType != "int" {
+			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "int")
+			assignError = true
+		}
+
+		analyzeExpr(assignTo)
 
 	case "<Equality>", "<Inequality>": // bool expr
+		if assignee.dataType != "boolean" {
+			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "boolean")
+			assignError = true
+		}
 
+		analyzeExpr(assignTo)
 	}
 
 	if assignError {
@@ -359,4 +371,8 @@ func analyzeAssign(node *Node) {
 	} else {
 		assignee.isInit = true
 	}
+}
+
+func analyzeExpr(node *Node) {
+
 }

@@ -1,8 +1,9 @@
 {
     int a
-    a = 1 + 2 + 3
-    string b
-    b = "test"
+    a = ("a" == "a")
+    string b 
+    b = 1 + 2
     boolean c
-    c = ("a" == "a")
+    c = "true"
+    
 } $
