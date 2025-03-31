@@ -1,8 +1,8 @@
 {
     int a
     a = 1
-    a = 1 + a
-    if (b == "q") {
-        print(a)
-    }
+    a = "hi"
+    int b
+    b = 2
+    print(1+2+(1 == "hi"))
  } $

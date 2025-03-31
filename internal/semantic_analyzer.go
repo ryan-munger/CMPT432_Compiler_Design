@@ -309,36 +309,47 @@ func issueUsageWarnings(table *SymbolTable) {
 func typeMismatch(operation string, pos Location, leftType string, rightType string) {
 	Error(fmt.Sprintf("Type mismatch on (%d:%d): cannot %s type [ %s ] to type [ %s ]",
 		pos.line, pos.startPos, operation, rightType, leftType), "SEMANTIC ANALYZER")
+	errorCount++
 }
 
 // digit, add -> int
 // string -> string
 // equality, boolval -> bool
 // id -> type of symbol
-func getNodeType(node *Node, examineChildren bool) string {
+func getNodeType(node *Node, examineChildren bool, markUsed bool) string {
 	if node.Type == "<Addition>" {
 		if examineChildren {
 			analyzeAdd(node)
 		}
 		return "int"
+
 	} else if node.Type == "<Equality>" || node.Type == "<Inequality>" {
 		if examineChildren {
 			analyzeCompare(node)
 		}
 		return "boolean"
+
 	} else if node.Type == "Token" {
 		if node.Token.tType == Digit {
 			return "int"
+
 		} else if node.Token.content == "STRING" {
 			return "string"
+
 		} else if node.Token.tType == Identifier {
 			symbol, err := lookup(node.Token.trueContent, node.Token.location)
 			if err != nil {
 				return "" // id doesn't exist - bail
 			}
+
+			if markUsed {
+				symbol.beenUsed = true
+			}
 			return symbol.dataType
+
 		} else { // boolval
 			return "boolean"
+
 		}
 	} else {
 		return ""
@@ -370,56 +381,13 @@ func analyzeAssign(node *Node) {
 	if err != nil {
 		return
 	}
-
-	var assignError bool
 	var assignTo *Node = node.Children[1]
+	var assignToType string = getNodeType(assignTo, true, true)
 
-	switch assignTo.Type {
-	case "Token": // digit, str, id, bool
-		if assignTo.Token.tType == Digit {
-			if assignee.dataType != "int" {
-				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "int")
-				assignError = true
-			}
-		} else if assignTo.Token.content == "STRING" {
-			if assignee.dataType != "string" {
-				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "string")
-				assignError = true
-			}
-		} else if assignTo.Token.tType == Identifier {
-			assignedToSymbol, err := lookup(assignTo.Token.trueContent, assignTo.Token.location)
-			if err != nil {
-				return // id we are assigning to doesn't exist
-			}
-
-			if assignee.dataType != assignedToSymbol.dataType {
-				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, assignedToSymbol.dataType)
-				assignError = true
-			}
-		} else {
-			if assignee.dataType != "boolean" {
-				typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "boolean")
-				assignError = true
-			}
-		}
-
-	case "<Addition>": // int expr
-		if assignee.dataType != "int" {
-			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "int")
-			assignError = true
-		}
-		analyzeAdd(assignTo)
-
-	case "<Equality>", "<Inequality>": // bool expr
-		if assignee.dataType != "boolean" {
-			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "boolean")
-			assignError = true
-		}
-		analyzeCompare(assignTo)
-	}
-
-	if assignError {
-		errorCount++
+	if assignToType == "" {
+		return // bad ID - go no further
+	} else if assignee.dataType != assignToType {
+		typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, assignToType)
 	} else {
 		assignee.isInit = true
 	}
@@ -429,41 +397,15 @@ func analyzeAssign(node *Node) {
 // we don't even need to check the left side of intop because parser did (digit)
 // right can be add, string, digit, id, bool, equality
 func analyzeAdd(node *Node) {
-	var leftAdd *Node = node.Children[0]
+	var leftAdd *Node = node.Children[0] // always a digit!!
 	var rightAdd *Node = node.Children[1]
+	var rightAddType string = getNodeType(rightAdd, true, true)
 
-	if rightAdd.Type == "<Addition>" {
-		analyzeAdd(rightAdd)
-
-		// id, digit, string
-	} else if rightAdd.Type == "Token" {
-		if rightAdd.Token.tType == Identifier {
-			addSym, err := lookup(rightAdd.Token.trueContent, rightAdd.Token.location)
-			if err != nil {
-				return // id we are adding doesn't exist
-			}
-
-			if addSym.dataType != "int" {
-				typeMismatch("add", leftAdd.Token.location, "int", addSym.dataType)
-				errorCount++
-			} else {
-				addSym.beenUsed = true
-			}
-		} else if rightAdd.Token.content == "STRING" {
-			typeMismatch("add", leftAdd.Token.location, "int", "string")
-			errorCount++
-		} else if rightAdd.Token.tType == Digit {
-			// digit, no action needed
-		} else { // boolean
-			typeMismatch("add", leftAdd.Token.location, "int", "boolean")
-			errorCount++
-		}
-
-	} else if rightAdd.Type == "<Equality>" || rightAdd.Type == "<Inequality>" {
-		typeMismatch("add", leftAdd.Token.location, "int", "boolean")
-		errorCount++
+	if rightAddType == "" {
+		return // bad ID - go no further
+	} else if rightAddType != "int" {
+		typeMismatch("compare", leftAdd.Token.location, "int", rightAddType)
 	}
-
 }
 
 // -boolop
@@ -472,14 +414,13 @@ func analyzeAdd(node *Node) {
 func analyzeCompare(node *Node) {
 	// the types of these must match
 	var leftCompare *Node = node.Children[0]
-	var leftType string = getNodeType(leftCompare, true)
+	var leftType string = getNodeType(leftCompare, true, true)
 	var rightCompare *Node = node.Children[1]
-	var rightType string = getNodeType(rightCompare, true)
+	var rightType string = getNodeType(rightCompare, true, true)
 
 	if leftType == "" || rightType == "" {
 		return // bad ID - go no further
 	} else if leftType != rightType {
 		typeMismatch("compare", leftCompare.Token.location, leftType, rightType)
-		errorCount++
 	}
 }
