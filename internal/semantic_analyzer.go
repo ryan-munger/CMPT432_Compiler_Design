@@ -15,8 +15,9 @@ var (
 	symbolTableTreeList []*SymbolTableTree
 	curSymbolTableTree  *SymbolTableTree
 	curSymbolTable      *SymbolTable
-	errorCount          int
-	warnCount           int
+	errorCount          int = 0
+	warnCount           int = 0
+	scopeDepth          int = 0 // just for naming the scopes
 )
 
 func clearStringBuffer() {
@@ -66,6 +67,10 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
 	initSymbolTableTree(programNum)
 	scopeTypeCheck(curAst.rootNode) // recursive traversal starting from root
+
+	for _, tbl := range curSymbolTableTree.rootTable.subTables {
+		println(tbl.scopeID)
+	}
 
 	issueUsageWarnings(curSymbolTableTree.rootTable) // recursive
 	if errorCount == 0 {
@@ -231,8 +236,14 @@ func collapseCharList() *Node {
 
 func scopeTypeCheck(node *Node) {
 	switch node.Type {
-	// case "<Block>":
-	// 	// scope stuff!!
+	case "<Block>":
+		println("scope time")
+		newDownScope()
+		for _, child := range node.Children {
+			scopeTypeCheck(child)
+		}
+		goUpScope()
+
 	case "<VarDecl>":
 		analyzeVarDecl(node)
 	case "<AssignmentStatement>":
@@ -265,8 +276,29 @@ func initSymbolTableTree(pNum int) {
 		symbolTableTreeList = append(symbolTableTreeList, &SymbolTableTree{})
 	}
 	curSymbolTableTree = symbolTableTreeList[pNum]
-	curSymbolTableTree.rootTable = NewSymbolTable("0")
-	curSymbolTable = curSymbolTableTree.rootTable
+}
+
+func newDownScope() {
+	// root - has nil parent
+	if curSymbolTableTree.rootTable == nil {
+		curSymbolTableTree.rootTable = NewSymbolTable("0", nil)
+		curSymbolTable = curSymbolTableTree.rootTable
+	} else {
+		// not using 1a, 1b bc limit of alpha is 26 possible blocks at certain depth
+		var newScopeName string = fmt.Sprintf("%d.%d", scopeDepth, len(curSymbolTable.subTables))
+		var newScope *SymbolTable = NewSymbolTable(newScopeName, curSymbolTable)
+		curSymbolTable.AddSubTable(newScope)
+		curSymbolTable = newScope
+	}
+	scopeDepth++
+}
+
+func goUpScope() {
+	// if nil, we are at highest scope
+	if curSymbolTable.parentTable != nil {
+		curSymbolTable = curSymbolTable.parentTable
+		scopeDepth--
+	}
 }
 
 // find an entry in accessible tables, pos is just for err reporting

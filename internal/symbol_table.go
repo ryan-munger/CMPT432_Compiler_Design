@@ -24,10 +24,9 @@ type SymbolTableTree struct {
 	rootTable *SymbolTable
 }
 
-func NewSymbolTable(scopeID string) *SymbolTable {
-	var newTable *SymbolTable = &SymbolTable{scopeID: scopeID}
+func NewSymbolTable(scopeID string, parent *SymbolTable) *SymbolTable {
 	// must init map or can't add to it
-	newTable.entries = make(map[string]*SymbolEntry)
+	var newTable *SymbolTable = &SymbolTable{scopeID: scopeID, entries: make(map[string]*SymbolEntry), parentTable: parent}
 	return newTable
 }
 

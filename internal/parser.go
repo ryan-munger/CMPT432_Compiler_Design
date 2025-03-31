@@ -178,8 +178,10 @@ func parseStatementList() {
 		if liveToken.content != "OPEN_BRACE" {
 			alternateWarning = "Hint: Possibly missing element in: {PrintStatement, AssignmentStatement, VarDecl, WhileStatement, IfStatement, Block}"
 		}
+		currentParent = statementListNode
 		epsilonProduction()
 	}
+	currentParent = statementListNode
 }
 
 // PrintStatement | AssignmentStatement | VarDecl | WhileStatement | IfStatement | Block
@@ -267,6 +269,7 @@ func parseExpr() {
 	} else {
 		wrongToken("token in: {ID [ char ], IntExpr, StringExpr, BooleanExpr}")
 	}
+	currentParent = exprNode
 }
 
 // [digit, intop, Expr] | digit
@@ -296,6 +299,7 @@ func parseIntExpr() {
 	} else if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		alternateWarning = "Hint: Possible missing ADD [ + ]."
 	}
+	currentParent = intExprNode
 }
 
 // +
@@ -304,9 +308,9 @@ func parseIntOp() {
 		return
 	}
 	Debug("! Parsing at IntOp Level !", "PARSER")
-	var charListNode *Node = NewNode("<IntOp>", nil)
-	currentParent.AddChild(charListNode)
-	currentParent = charListNode
+	var intOpNode *Node = NewNode("<IntOp>", nil)
+	currentParent.AddChild(intOpNode)
+	currentParent = intOpNode
 
 	if liveToken.content == "ADD" && liveToken.tType == Symbol {
 		consumeCurrentToken()
@@ -321,9 +325,9 @@ func parseDigit() {
 		return
 	}
 	Debug("! Parsing at Digit Level !", "PARSER")
-	var charListNode *Node = NewNode("<Digit>", nil)
-	currentParent.AddChild(charListNode)
-	currentParent = charListNode
+	var digitNode *Node = NewNode("<Digit>", nil)
+	currentParent.AddChild(digitNode)
+	currentParent = digitNode
 
 	if liveToken.content == "DIGIT" && liveToken.tType == Digit {
 		consumeCurrentToken()
@@ -382,6 +386,7 @@ func parseCharList() {
 	} else {
 		epsilonProduction()
 	}
+	currentParent = charListNode
 }
 
 // char
@@ -390,9 +395,9 @@ func parseChar() {
 		return
 	}
 	Debug("! Parsing at Char Level !", "PARSER")
-	var charListNode *Node = NewNode("<Char>", nil)
-	currentParent.AddChild(charListNode)
-	currentParent = charListNode
+	var charNode *Node = NewNode("<Char>", nil)
+	currentParent.AddChild(charNode)
+	currentParent = charNode
 
 	if liveToken.content == "CHAR" && liveToken.tType == Character {
 		consumeCurrentToken()
@@ -431,6 +436,7 @@ func parseAssignmentStatement() {
 		currentParent = assignNode
 		parseExpr()
 	}
+	currentParent = assignNode
 }
 
 // ID
@@ -439,9 +445,9 @@ func parseID() {
 		return
 	}
 	Debug("! Parsing at ID Level !", "PARSER")
-	var charListNode *Node = NewNode("<ID>", nil)
-	currentParent.AddChild(charListNode)
-	currentParent = charListNode
+	var idNode *Node = NewNode("<ID>", nil)
+	currentParent.AddChild(idNode)
+	currentParent = idNode
 
 	if liveToken.content == "ID" && liveToken.tType == Identifier {
 		consumeCurrentToken()
@@ -473,6 +479,7 @@ func parseVarDecl() {
 	} else {
 		wrongToken("ID [ char ]")
 	}
+	currentParent = declNode
 }
 
 // type keywords
@@ -481,9 +488,9 @@ func parseType() {
 		return
 	}
 	Debug("! Parsing at Type Level !", "PARSER")
-	var charListNode *Node = NewNode("<Type>", nil)
-	currentParent.AddChild(charListNode)
-	currentParent = charListNode
+	var typeNode *Node = NewNode("<Type>", nil)
+	currentParent.AddChild(typeNode)
+	currentParent = typeNode
 
 	if isTypeKeyword(liveToken.trueContent) && liveToken.tType == Keyword {
 		consumeCurrentToken()
@@ -521,6 +528,7 @@ func parseWhileStatement() {
 		currentParent = whileNode
 		parseBlock()
 	}
+	currentParent = whileNode
 }
 
 // [(, Expr, boolop, Expr, )] | boolval
@@ -562,9 +570,10 @@ func parseBooleanExpr() {
 		}
 
 	} else {
+		currentParent = boolExprNode
 		parseBoolVal()
 	}
-
+	currentParent = boolExprNode
 }
 
 // == | !=
@@ -629,6 +638,7 @@ func parseIfStatement() {
 		currentParent = ifNode
 		parseBlock()
 	}
+	currentParent = ifNode
 }
 
 func epsilonProduction() {
