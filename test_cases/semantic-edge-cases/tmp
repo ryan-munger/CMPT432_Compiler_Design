@@ -1,0 +1,8 @@
+{
+    int a
+    a = 1
+    a = 1 + a
+    if (b == "q") {
+        print(a)
+    }
+ } $

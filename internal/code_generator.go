@@ -1,5 +1,5 @@
 package internal
 
-func CodeGeneration(ast *TokenTree, pNum int) {
+func CodeGeneration(ast *TokenTree, symbolTable *SymbolTableTree, pNum int) {
 	// Info("Code Gen", "CODE GENERATOR", true)
 }

@@ -73,7 +73,7 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 			programNum+1, warnCount), "SEMANTIC ANALYZER")
 		Info(fmt.Sprintf("Program %d Symbol Table:\n%s\n%s", programNum+1, strings.Repeat("-", 54),
 			curSymbolTableTree.ToString()), "GOPILER", true)
-		CodeGeneration(curAst, programNum)
+		CodeGeneration(curAst, curSymbolTableTree, programNum)
 	} else {
 		Fail(fmt.Sprintf("Semantic Analysis failed with %d error(s) and %d warning(s).",
 			errorCount, warnCount), "SEMANTIC ANALYZER")
@@ -242,7 +242,7 @@ func scopeTypeCheck(node *Node) {
 	case "<Addition>":
 		analyzeAdd(node)
 	case "<Equality>", "<Inequality>":
-		analyzeEquality(node)
+		analyzeCompare(node)
 
 	// print an id
 	case "Token":
@@ -293,9 +293,11 @@ func issueUsageWarnings(table *SymbolTable) {
 		if !entry.isInit {
 			Warn(fmt.Sprintf("ID [ %s ] from scope [ %s ] was declared but never initialized.",
 				entry.name, table.scopeID), "SEMANTIC ANALYZER")
+			warnCount++
 		} else if !entry.beenUsed {
 			Warn(fmt.Sprintf("ID [ %s ] from scope [ %s ] was declared and initialized but never used.",
 				entry.name, table.scopeID), "SEMANTIC ANALYZER")
+			warnCount++
 		}
 	}
 
@@ -307,6 +309,40 @@ func issueUsageWarnings(table *SymbolTable) {
 func typeMismatch(operation string, pos Location, leftType string, rightType string) {
 	Error(fmt.Sprintf("Type mismatch on (%d:%d): cannot %s type [ %s ] to type [ %s ]",
 		pos.line, pos.startPos, operation, rightType, leftType), "SEMANTIC ANALYZER")
+}
+
+// digit, add -> int
+// string -> string
+// equality, boolval -> bool
+// id -> type of symbol
+func getNodeType(node *Node, examineChildren bool) string {
+	if node.Type == "<Addition>" {
+		if examineChildren {
+			analyzeAdd(node)
+		}
+		return "int"
+	} else if node.Type == "<Equality>" || node.Type == "<Inequality>" {
+		if examineChildren {
+			analyzeCompare(node)
+		}
+		return "boolean"
+	} else if node.Type == "Token" {
+		if node.Token.tType == Digit {
+			return "int"
+		} else if node.Token.content == "STRING" {
+			return "string"
+		} else if node.Token.tType == Identifier {
+			symbol, err := lookup(node.Token.trueContent, node.Token.location)
+			if err != nil {
+				return "" // id doesn't exist - bail
+			}
+			return symbol.dataType
+		} else { // boolval
+			return "boolean"
+		}
+	} else {
+		return ""
+	}
 }
 
 // new symbol
@@ -379,7 +415,7 @@ func analyzeAssign(node *Node) {
 			typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, "boolean")
 			assignError = true
 		}
-		analyzeEquality(assignTo)
+		analyzeCompare(assignTo)
 	}
 
 	if assignError {
@@ -430,6 +466,20 @@ func analyzeAdd(node *Node) {
 
 }
 
-func analyzeEquality(node *Node) {
+// -boolop
+// --expr
+// --expr
+func analyzeCompare(node *Node) {
+	// the types of these must match
+	var leftCompare *Node = node.Children[0]
+	var leftType string = getNodeType(leftCompare, true)
+	var rightCompare *Node = node.Children[1]
+	var rightType string = getNodeType(rightCompare, true)
 
+	if leftType == "" || rightType == "" {
+		return // bad ID - go no further
+	} else if leftType != rightType {
+		typeMismatch("compare", leftCompare.Token.location, leftType, rightType)
+		errorCount++
+	}
 }
