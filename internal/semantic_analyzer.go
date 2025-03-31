@@ -10,7 +10,7 @@ var (
 	astList             []TokenTree
 	curAst              *TokenTree
 	curParent           *Node
-	prevParent          *Node
+	parentStack         []*Node // Stack to track parent nodes
 	stringBuffer        []*Node
 	symbolTableTreeList []*SymbolTableTree
 	curSymbolTableTree  *SymbolTableTree
@@ -67,10 +67,6 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
 	initSymbolTableTree(programNum)
 	scopeTypeCheck(curAst.rootNode) // recursive traversal starting from root
-
-	for _, tbl := range curSymbolTableTree.rootTable.subTables {
-		println(tbl.scopeID)
-	}
 
 	issueUsageWarnings(curSymbolTableTree.rootTable) // recursive
 	if errorCount == 0 {
@@ -130,20 +126,24 @@ func extractEssentials(node *Node) {
 	}
 }
 
+// Each function call gets its own curParent from the stack, so deeper recursion doesn’t interfere
 // something important that we want an AST node and children for
 func importantNodeAbstraction(node *Node) {
 	importantNode := NewNode(node.Type, nil)
 	curParent.AddChild(importantNode)
 
-	prevParent = curParent
+	// Push current parent to stack and update curParent
+	parentStack = append(parentStack, curParent)
 	curParent = importantNode
 
+	// Process children
 	for _, child := range node.Children {
 		extractEssentials(child)
 	}
 
-	// Restore previous parent
-	curParent = prevParent
+	// Restore the previous parent from stack
+	curParent = parentStack[len(parentStack)-1]
+	parentStack = parentStack[:len(parentStack)-1] // Pop the last element
 }
 
 // ensure intop (add) becomes the parent left-recursively
@@ -152,20 +152,21 @@ func transformIntExpr(node *Node) {
 	if len(node.Children) == 1 { // just an int
 		extractEssentials(node.Children[0])
 	} else { // we have an intop! 3 parts - digit intop expr
-		var originalParent *Node = curParent
-
 		var additionNode *Node = NewNode("<Addition>", nil)
 		curParent.AddChild(additionNode)
 
+		// Push current parent to stack and update curParent
+		parentStack = append(parentStack, curParent)
 		curParent = additionNode
 
-		// add the digit as a child
+		// Add the digit as a child
 		curParent.AddChild(CopyNode(node.Children[0].Children[0]))
-		// examine the expression following
+		// Process the expression following the operator
 		extractEssentials(node.Children[2])
 
-		// Restore previous parent
-		curParent = originalParent
+		// Restore the previous parent from stack
+		curParent = parentStack[len(parentStack)-1]
+		parentStack = parentStack[:len(parentStack)-1] // Pop from stack
 	}
 }
 
@@ -179,7 +180,7 @@ func transformStringExpr(node *Node) {
 }
 
 // trust the parser!!! we can hardcode!!
-func transformBoolExpr(node *Node) { // ( expr boolop expr ) | boolVal
+func transformBoolExpr(node *Node) {
 	if len(node.Children) == 1 { // just a boolVal
 		extractEssentials(node.Children[0])
 	} else {
@@ -190,15 +191,19 @@ func transformBoolExpr(node *Node) { // ( expr boolop expr ) | boolVal
 			boolOpNode = NewNode("<Inequality>", nil)
 		}
 
-		var originalParent *Node = curParent
-
 		curParent.AddChild(boolOpNode)
+
+		// Push current parent to stack and update curParent
+		parentStack = append(parentStack, curParent)
 		curParent = boolOpNode
 
-		extractEssentials(node.Children[1]) // examine expr1
-		extractEssentials(node.Children[3]) // examine expr2
+		// Process the two expressions
+		extractEssentials(node.Children[1]) // Left expr
+		extractEssentials(node.Children[3]) // Right expr
 
-		curParent = originalParent
+		// Restore the previous parent from stack
+		curParent = parentStack[len(parentStack)-1]
+		parentStack = parentStack[:len(parentStack)-1] // Pop from stack
 	}
 }
 
@@ -237,7 +242,6 @@ func collapseCharList() *Node {
 func scopeTypeCheck(node *Node) {
 	switch node.Type {
 	case "<Block>":
-		println("scope time")
 		newDownScope()
 		for _, child := range node.Children {
 			scopeTypeCheck(child)
