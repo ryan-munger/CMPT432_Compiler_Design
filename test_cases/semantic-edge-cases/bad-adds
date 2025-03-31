@@ -1,0 +1,8 @@
+{
+    int a
+    a = 1 + "string"
+    a = 1 + 2 + true
+    a = 1 + b
+    print(1 + (true == false))
+    a = 1 + a
+}

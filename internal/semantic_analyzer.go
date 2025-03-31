@@ -125,7 +125,7 @@ func extractEssentials(node *Node) {
 	}
 }
 
-// Transform Assignment Statement
+// something important that we want an AST node and children for
 func importantNodeAbstraction(node *Node) {
 	importantNode := NewNode(node.Type, nil)
 	curParent.AddChild(importantNode)
@@ -141,7 +141,8 @@ func importantNodeAbstraction(node *Node) {
 	curParent = prevParent
 }
 
-// add everything to buffer so we can fix orderings
+// ensure intop (add) becomes the parent left-recursively
+// we can have boolexprs and string exprs here - is valid for AST
 func transformIntExpr(node *Node) {
 	if len(node.Children) == 1 { // just an int
 		extractEssentials(node.Children[0])
@@ -229,7 +230,6 @@ func collapseCharList() *Node {
 }
 
 func scopeTypeCheck(node *Node) {
-	println(node.Type)
 	switch node.Type {
 	// case "<Block>":
 	// 	// scope stuff!!
@@ -246,9 +246,11 @@ func scopeTypeCheck(node *Node) {
 
 	// print an id
 	case "Token":
-		symbol, err := lookup(node.Token.trueContent, node.Token.location)
-		if err == nil {
-			symbol.beenUsed = true
+		if node.Token.tType == Identifier {
+			symbol, err := lookup(node.Token.trueContent, node.Token.location)
+			if err == nil {
+				symbol.beenUsed = true
+			}
 		}
 
 	default:
@@ -387,7 +389,44 @@ func analyzeAssign(node *Node) {
 	}
 }
 
+// easier bc no valid subexpressions that aren't add
+// we don't even need to check the left side of intop because parser did (digit)
+// right can be add, string, digit, id, bool, equality
 func analyzeAdd(node *Node) {
+	var leftAdd *Node = node.Children[0]
+	var rightAdd *Node = node.Children[1]
+
+	if rightAdd.Type == "<Addition>" {
+		analyzeAdd(rightAdd)
+
+		// id, digit, string
+	} else if rightAdd.Type == "Token" {
+		if rightAdd.Token.tType == Identifier {
+			addSym, err := lookup(rightAdd.Token.trueContent, rightAdd.Token.location)
+			if err != nil {
+				return // id we are adding doesn't exist
+			}
+
+			if addSym.dataType != "int" {
+				typeMismatch("add", leftAdd.Token.location, "int", addSym.dataType)
+				errorCount++
+			} else {
+				addSym.beenUsed = true
+			}
+		} else if rightAdd.Token.content == "STRING" {
+			typeMismatch("add", leftAdd.Token.location, "int", "string")
+			errorCount++
+		} else if rightAdd.Token.tType == Digit {
+			// digit, no action needed
+		} else { // boolean
+			typeMismatch("add", leftAdd.Token.location, "int", "boolean")
+			errorCount++
+		}
+
+	} else if rightAdd.Type == "<Equality>" || rightAdd.Type == "<Inequality>" {
+		typeMismatch("add", leftAdd.Token.location, "int", "boolean")
+		errorCount++
+	}
 
 }
 
