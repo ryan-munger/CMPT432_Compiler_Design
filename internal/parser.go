@@ -654,3 +654,7 @@ func epsilonProduction() {
 	var newNode *Node = NewNode("Token", &epsToken)
 	currentParent.AddChild(newNode)
 }
+
+func GetCst() string {
+	return "cst"
+}

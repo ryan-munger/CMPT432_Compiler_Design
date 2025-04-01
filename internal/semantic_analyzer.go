@@ -538,6 +538,10 @@ func analyzeCompare(node *Node) {
 	}
 }
 
+func GetAst() string {
+	return "ast"
+}
+
 func GetSymbolTables() string {
 	return "hi"
 }

@@ -75,15 +75,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 // After successfully receiving the compilation output, send GET requests to /getSymbolTables and /getMachineCode
                 return Promise.all([
                     fetch("/getSymbolTables").then(response => response.json()),
-                    fetch("/getMachineCode").then(response => response.text()) // Change to response.text()
+                    fetch("/getMachineCode").then(response => response.text()), 
+                    fetch("/getCST").then(response => response.text()), 
+                    fetch("/getAST").then(response => response.text()) 
                 ]);
             } else {
                 throw new Error("Compilation failed");
             }
         })
-        .then(([symbolData, machineCodeData]) => {
+        .then(([symbolData, machineCodeData, cstData, astData]) => {
             document.getElementById("symbolTable").innerHTML = JSON.stringify(symbolData, null, 2);
-            document.getElementById('machineCode').textContent = machineCodeData; // No need for JSON.stringify here
+            document.getElementById('machineCode').textContent = machineCodeData; 
+            document.getElementById('cstBox').textContent = cstData; 
+            document.getElementById('astBox').textContent = astData; 
         })
         .catch(error => {
             document.getElementById("consoleOutput").textContent = "Error: " + error;

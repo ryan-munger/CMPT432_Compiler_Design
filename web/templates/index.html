@@ -74,11 +74,11 @@
             </div>
         </div>
 
-        <!-- Other Output Boxes -->
+        <!-- Symbol and Machine Code Boxes -->
         <div class="grid grid-cols-2 gap-6 mt-6">
             <!-- Symbol Table Section -->
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold text-white mb-2">Symbol Table(s)</h2>
+                <h2 class="text-xl font-semibold text-white mb-2">Symbol Table</h2>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
                     <pre id="symbolTable"
                         class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
@@ -104,6 +104,29 @@
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
                     <pre id="machineCode"
                         class="w-full h-full p-3 text-green-400 text-base overflow-auto"
+                        style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+            </div>
+        </div>
+
+         <!-- Tree Boxes -->
+         <div class="grid grid-cols-2 gap-6 mt-6">
+            <!-- CST Section -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Concrete Syntax Tree (CST)</h2>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
+                    <pre id="cstBox"
+                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                        style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+            </div>
+
+            <!--AST Section -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Abstract Syntax Tree (AST)</h2>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
+                    <pre id="astBox"
+                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
                         style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>

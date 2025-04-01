@@ -48,6 +48,16 @@ func StartServer(expose bool) {
 		c.JSON(http.StatusOK, gin.H{"output": output})
 	})
 
+	r.GET("/getCST", func(c *gin.Context) {
+		cst := internal.GetCst()
+		c.JSON(http.StatusOK, cst)
+	})
+
+	r.GET("/getAST", func(c *gin.Context) {
+		ast := internal.GetAst()
+		c.JSON(http.StatusOK, ast)
+	})
+
 	// for symbol table display box
 	r.GET("/getSymbolTables", func(c *gin.Context) {
 		symbolTables := internal.GetSymbolTables()
