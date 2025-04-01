@@ -1,10 +1,10 @@
 /* Here's a bunch of print statements */
   {
     print("i")
-      print("think")
+      print((true == true))
       
       {
-        print("i")
+        print(1 + 2 + 3)
         print("can")
           
           print("i")

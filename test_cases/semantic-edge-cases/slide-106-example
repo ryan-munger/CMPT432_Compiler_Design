@@ -1,0 +1,17 @@
+{
+ int a
+ a = 7
+ string b
+ b = " bstring "
+ {
+ print(a)
+ print(b)
+ b = " outer b is still a string "
+ int b
+ b = 0
+ print(b)
+ b = a
+ print(b)
+ }
+ print(b)
+}$

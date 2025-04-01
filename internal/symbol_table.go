@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -65,12 +66,25 @@ func (table *SymbolTable) collectEntries(sb *strings.Builder) {
 	if table == nil {
 		return
 	}
+
+	// Convert map to slice for sorting - for my eyeballs to see alphabetized
+	entrySlice := make([]*SymbolEntry, 0, len(table.entries))
 	for _, entry := range table.entries {
+		entrySlice = append(entrySlice, entry)
+	}
+
+	// Sort slice by name ASC
+	sort.Slice(entrySlice, func(i, j int) bool {
+		return entrySlice[i].name < entrySlice[j].name
+	})
+
+	for _, entry := range entrySlice {
 		var pos string = fmt.Sprintf("(%d:%d)", entry.position.line, entry.position.startPos)
 		sb.WriteString(fmt.Sprintf("| %-5s | %-4s | %-7s | %-9s | %-5t | %-5t |\n",
 			table.scopeID, entry.name, entry.dataType, pos, entry.isInit, entry.beenUsed))
 		sb.WriteString(strings.Repeat("-", 54) + "\n")
 	}
+
 	for _, subTable := range table.subTables {
 		subTable.collectEntries(sb)
 	}
