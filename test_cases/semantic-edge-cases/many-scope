@@ -1,0 +1,51 @@
+/*
+  Scope tree test.
+      (Scope)
+      * a | Type: int Used: true, Line: 4, Pos:5
+      * d | Type: int Used: false, Line: 7, Pos:5
+      * z | Type: int Used: true, Line: 9, Pos:5
+      - (Scope)
+      -- [Scope]
+      - (Scope)
+      -- (Scope)
+      --- [Scope]
+      **** b | Type: int Used: false, Line: 5, Pos:8
+      - [Scope]
+      ** c | Type: int Used: false, Line: 6, Pos:6
+      - (Scope)
+      ** e | Type: int Used: false, Line: 8, Pos:6
+      -- [Scope]
+      *** f | Type: int Used: false, Line: 8, Pos:13
+      - [Scope]
+  */
+  {
+      {
+          {
+          }
+      }
+      
+      int a
+      
+      {
+          {
+              {
+                  int b
+              }
+          }
+      }
+      {
+          int c
+      }
+      int d
+      {
+          int e 
+          {
+              int f
+          }
+      }
+      int z
+      {
+          z = 3 
+          a = 3
+      }
+  }$

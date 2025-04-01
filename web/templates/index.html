@@ -10,15 +10,28 @@
     <script src="../static/script.js"></script>
 </head>
 
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
-    <div class="w-3/4">
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen py-8">
+    <div class="w-3/4 my-8">
         <!-- Title -->
         <div class="flex justify-between items-center mb-6">
             <div class="flex items-end gap-2">
                 <h1 class="text-6xl font-extrabold text-green-400">GOPILER</h1>
                 <span class="text-lg text-gray-400">Ryan Munger</span>
             </div>
-            <div class="flex gap-4">
+        </div>
+
+        <!-- Buttons row - All three buttons in line -->
+        <div class="grid grid-cols-2 gap-6 mb-2">
+            <div class="flex items-center gap-4">
+                <select id="exampleSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">
+                    <option value="" disabled selected>Select Example</option>
+                    <option value="Hello-Compiler">Hello-Compiler</option>
+                    <option value="Multi-Program">Multi-Program</option>
+                    <option value="James-Bond-James">James-Bond-James</option>
+                    <option value="Lex-Without-Spaces">Lex-Without-Spaces</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-4">
                 <!-- Show Grammar Button -->
                 <a href="../static/language_grammar.pdf" target="_blank">
                     <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">
@@ -27,29 +40,21 @@
                 </a>
                 <!-- Verbose Mode Button -->
                 <button id="verboseButton"
-                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
                     Verbose Mode: ON
                 </button>
             </div>
         </div>
 
-        <!-- Input & Console Sections -->
+        <!-- Input, Console, and Other Sections -->
         <div class="grid grid-cols-2 gap-6">
             <!-- Input Section -->
-            <div class="bg-gray-800 p-4 rounded-lg shadow-md relative">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xl font-semibold text-white">Input</h2>
-                    <!-- Test Selector Dropdown -->
-                    <select id="exampleSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">
-                        <option value="" disabled selected>Select Example</option>
-                        <option value="Hello-Compiler">Hello-Compiler</option>
-                        <option value="Multi-Program">Multi-Program</option>
-                        <option value="James-Bond-James">James-Bond-James</option>
-                        <option value="Lex-Without-Spaces">Lex-Without-Spaces</option>
-                    </select>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Input</h2>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[24rem]">
+                    <textarea id="codeInput"
+                        class="w-full h-full p-3 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-green-400 rounded-lg"></textarea>
                 </div>
-                <textarea id="codeInput"
-                    class="w-full h-[30rem] p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
                 <div class="flex gap-4 mt-4">
                     <button id="compileButton"
                         class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Compile</button>
@@ -61,9 +66,34 @@
             <!-- Console Output -->
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold text-white mb-2">Console</h2>
-                <pre id="consoleOutput"
-                    class="w-full h-[30rem] p-3 bg-gray-700 text-green-400 text-sm rounded-lg border border-gray-600 overflow-auto"
-                    style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[24rem]">
+                    <pre id="consoleOutput"
+                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                        style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Smaller Output Boxes -->
+        <div class="grid grid-cols-2 gap-6 mt-6">
+            <!-- Symbol Table Section -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Symbol Table(s)</h2>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
+                    <pre id="symbolTable"
+                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                        style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+            </div>
+
+            <!-- Machine Code Section -->
+            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-white mb-2">Machine Code</h2>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
+                    <pre id="machineCode"
+                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                        style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
             </div>
         </div>
     </div>
