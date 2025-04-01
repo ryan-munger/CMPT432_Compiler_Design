@@ -69,12 +69,27 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => response.json())
         .then(data => {
-            document.getElementById("consoleOutput").innerHTML = data.output;
+            if (data.output) {
+                document.getElementById("consoleOutput").innerHTML = data.output;
+    
+                // After successfully receiving the compilation output, send GET requests to /getSymbolTables and /getMachineCode
+                return Promise.all([
+                    fetch("/getSymbolTables").then(response => response.json()),
+                    fetch("/getMachineCode").then(response => response.text()) // Change to response.text()
+                ]);
+            } else {
+                throw new Error("Compilation failed");
+            }
+        })
+        .then(([symbolData, machineCodeData]) => {
+            document.getElementById("symbolTable").innerHTML = JSON.stringify(symbolData, null, 2);
+            document.getElementById('machineCode').textContent = machineCodeData; // No need for JSON.stringify here
         })
         .catch(error => {
             document.getElementById("consoleOutput").textContent = "Error: " + error;
         });
     });
+    
 
     // Clear code function
     document.getElementById("clearButton").addEventListener("click", function () {

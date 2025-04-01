@@ -537,3 +537,7 @@ func analyzeCompare(node *Node) {
 		Debug(fmt.Sprintf("Type checked %s", node.Type), "SEMANTIC ANALYZER")
 	}
 }
+
+func GetSymbolTables() string {
+	return "hi"
+}

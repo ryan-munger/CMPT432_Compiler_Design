@@ -48,6 +48,18 @@ func StartServer(expose bool) {
 		c.JSON(http.StatusOK, gin.H{"output": output})
 	})
 
+	// for symbol table display box
+	r.GET("/getSymbolTables", func(c *gin.Context) {
+		symbolTables := internal.GetSymbolTables()
+		c.JSON(http.StatusOK, symbolTables)
+	})
+
+	// for machine code display box
+	r.GET("/getMachineCode", func(c *gin.Context) {
+		machineCode := internal.GetMachineCode()
+		c.String(http.StatusOK, machineCode)
+	})
+
 	if expose {
 		log.Println("Web server exposed to internet; [host_ip]:8080")
 		r.Run("0.0.0.0:8080") // exposed to internet
