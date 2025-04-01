@@ -441,8 +441,8 @@ func analyzeVarDecl(node *Node) {
 		var dType string = node.Children[0].Token.trueContent
 		var entry *SymbolEntry = NewTableEntry(name, dType, pos)
 		curSymbolTable.AddEntry(name, entry)
-		Debug(fmt.Sprintf("Declared new entry [ %s ] of type [ %s ] in scope [ %s ]",
-			name, dType, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
+		Debug(fmt.Sprintf("Declared new entry [ %s ] of type [ %s ] in scope [ %s ] at (%d:%d)",
+			name, dType, curSymbolTable.scopeID, pos.line, pos.startPos), "SEMANTIC ANALYZER")
 	}
 }
 
@@ -460,10 +460,14 @@ func analyzeAssign(node *Node) {
 		return // bad ID - go no further
 	} else if assignee.dataType != assignToType {
 		typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, assignToType)
-	} else if !assignee.isInit {
-		assignee.isInit = true
-		Debug(fmt.Sprintf("Initialized entry [ %s ] in scope [ %s ]",
-			assignee.name, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
+	} else {
+		Debug(fmt.Sprintf("Type checked assignment of entry [ %s ] in scope [ %s ] at (%d:%d)",
+			assignee.name, curSymbolTable.scopeID, assignee.position.line, assignee.position.startPos), "SEMANTIC ANALYZER")
+		if !assignee.isInit {
+			assignee.isInit = true
+			Debug(fmt.Sprintf("Initialized entry [ %s ] in scope [ %s ] at (%d:%d)",
+				assignee.name, curSymbolTable.scopeID, assignee.position.line, assignee.position.startPos), "SEMANTIC ANALYZER")
+		}
 	}
 }
 
@@ -479,6 +483,9 @@ func analyzeAdd(node *Node) {
 		return // bad ID - go no further
 	} else if rightAddType != "int" {
 		typeMismatch("compare", leftAdd.Token.location, "int", rightAddType)
+	} else {
+		Debug(fmt.Sprintf("Type checked <Addition> at (%d:%d)",
+			leftAdd.Token.location.line, leftAdd.Token.location.startPos), "SEMANTIC ANALYZER")
 	}
 }
 
@@ -496,5 +503,7 @@ func analyzeCompare(node *Node) {
 		return // bad ID - go no further
 	} else if leftType != rightType {
 		typeMismatch("compare", leftCompare.Token.location, leftType, rightType)
+	} else {
+		Debug(fmt.Sprintf("Type checked %s", node.Type), "SEMANTIC ANALYZER")
 	}
 }
