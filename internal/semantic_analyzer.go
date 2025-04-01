@@ -144,6 +144,8 @@ func extractEssentials(node *Node) {
 func importantNodeAbstraction(node *Node) {
 	importantNode := NewNode(node.Type, nil)
 	curParent.AddChild(importantNode)
+	Debug(fmt.Sprintf("Added %s to the AST under parent: %s",
+		importantNode.Type, curParent.Type), "SEMANTIC ANALYZER")
 
 	// Push current parent to stack and update curParent
 	parentStack = append(parentStack, curParent)
@@ -167,6 +169,8 @@ func transformIntExpr(node *Node) {
 	} else { // we have an intop! 3 parts - digit intop expr
 		var additionNode *Node = NewNode("<Addition>", nil)
 		curParent.AddChild(additionNode)
+		Debug(fmt.Sprintf("Added <Addition> operation to AST under parent: %s",
+			curParent.Type), "SEMANTIC ANALYZER")
 
 		// Push current parent to stack and update curParent
 		parentStack = append(parentStack, curParent)
@@ -189,6 +193,8 @@ func transformStringExpr(node *Node) {
 		extractEssentials(child)
 	}
 	var concatNode *Node = collapseCharList()
+	Debug(fmt.Sprintf("Added StringExpr to AST under parent: %s; Collapsed CharList",
+		curParent.Type), "SEMANTIC ANALYZER")
 	curParent.AddChild(concatNode)
 }
 
@@ -205,6 +211,8 @@ func transformBoolExpr(node *Node) {
 		}
 
 		curParent.AddChild(boolOpNode)
+		Debug(fmt.Sprintf("Added %s comparison to AST under parent: %s",
+			boolOpNode.Type, curParent.Type), "SEMANTIC ANALYZER")
 
 		// Push current parent to stack and update curParent
 		parentStack = append(parentStack, curParent)
@@ -228,6 +236,8 @@ func transformToken(node *Node) {
 		stringBuffer = append(stringBuffer, node)
 	} else if node.Type == "Token" && !isGarbage(node.Token.content) {
 		curParent.AddChild(tokenNode)
+		Debug(fmt.Sprintf("Added Token [ %s ] to AST under parent: %s",
+			tokenNode.Token.content, curParent.Type), "SEMANTIC ANALYZER")
 	}
 }
 
