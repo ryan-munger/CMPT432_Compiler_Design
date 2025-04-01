@@ -15,9 +15,10 @@ var (
 	symbolTableTreeList []*SymbolTableTree
 	curSymbolTableTree  *SymbolTableTree
 	curSymbolTable      *SymbolTable
-	errorCount          int = 0
-	warnCount           int = 0
-	scopeDepth          int = 0 // just for naming the scopes
+	errorCount          int         = 0
+	warnCount           int         = 0
+	scopeDepth          int         = 0 // just for naming the scopes
+	scopePopulation     map[int]int     // see how many tables at depth for naming
 )
 
 func resetAll() {
@@ -30,6 +31,12 @@ func resetAll() {
 	errorCount = 0
 	warnCount = 0
 	scopeDepth = 0
+	scopePopulation = make(map[int]int)
+}
+
+func populationExists(candidate int) bool {
+	_, exists := scopePopulation[candidate]
+	return exists
 }
 
 func clearStringBuffer() {
@@ -314,6 +321,7 @@ func initSymbolTableTree(pNum int) {
 		symbolTableTreeList = append(symbolTableTreeList, &SymbolTableTree{})
 	}
 	curSymbolTableTree = symbolTableTreeList[pNum]
+	scopePopulation = make(map[int]int)
 }
 
 func newDownScope() {
@@ -321,11 +329,21 @@ func newDownScope() {
 	if curSymbolTableTree.rootTable == nil {
 		curSymbolTableTree.rootTable = NewSymbolTable("0", nil)
 		curSymbolTable = curSymbolTableTree.rootTable
+		scopePopulation[0] = 0
 		Debug(fmt.Sprintf("Encountered <Block>; Created root symbol table scope [ %s ]",
 			curSymbolTable.scopeID), "SEMANTIC ANALYZER")
 	} else {
 		// not using 1a, 1b bc limit of alpha is 26 possible blocks at certain depth
-		var newScopeName string = fmt.Sprintf("%d.%d", scopeDepth, len(curSymbolTable.subTables))
+		// name will be: depth.table number (ex. third table in scope 1)
+		var newScopeName string
+		if populationExists(scopeDepth) {
+			scopePopulation[scopeDepth] = scopePopulation[scopeDepth] + 1
+			newScopeName = fmt.Sprintf("%d.%d", scopeDepth, scopePopulation[scopeDepth])
+		} else {
+			scopePopulation[scopeDepth] = 0
+			newScopeName = fmt.Sprintf("%d.%d", scopeDepth, 0)
+		}
+
 		var newScope *SymbolTable = NewSymbolTable(newScopeName, curSymbolTable)
 		curSymbolTable.AddSubTable(newScope)
 		curSymbolTable = newScope
