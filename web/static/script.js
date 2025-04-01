@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
         verboseFlag = !verboseFlag;
         verboseButton.textContent = "Verbose Mode: " + (verboseFlag ? "ON" : "OFF");
         verboseButton.classList.toggle("bg-green-500", verboseFlag);
-        verboseButton.classList.toggle("bg-gray-700", !verboseFlag);
+        verboseButton.classList.toggle("bg-red-600", !verboseFlag);
     });
 
     // Capture Tab Key in the textarea
@@ -82,3 +82,21 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("consoleOutput").textContent = "";
     });
 });
+
+function copyMachineCode() {
+    const machineCode = document.getElementById('machineCode');
+    const text = machineCode.textContent;
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            // Show a brief "Copied!" message
+            const copyBtn = document.getElementById('copyButton');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = "Copied!";
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+            }, 2000);
+        })
+        .catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+}

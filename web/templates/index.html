@@ -88,7 +88,19 @@
 
             <!-- Machine Code Section -->
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold text-white mb-2">Machine Code</h2>
+                <div class="flex justify-between items-center mb-2">
+                    <div class="flex items-center">
+                        <h2 class="text-xl font-semibold text-white">Machine Code</h2>
+                        <button id="copyButton" onclick="copyMachineCode()" class="ml-2 bg-gray-600 hover:bg-gray-500 text-white p-1 rounded-lg" title="Copy to clipboard">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <button id="launchOSButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm" onclick="window.open('https://www.labouseur.com/commondocs/operating-systems/CyberCore/index.html', '_blank');">
+                        Launch OS
+                    </button>                                      
+                </div>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
                     <pre id="machineCode"
                         class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
