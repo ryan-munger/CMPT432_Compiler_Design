@@ -290,6 +290,12 @@ func scopeTypeCheck(node *Node) {
 		if node.Token.tType == Identifier {
 			symbol, err := lookup(node.Token.trueContent, node.Token.location)
 			if err == nil {
+				if !symbol.isInit {
+					Warn(fmt.Sprintf("Usage of uninitialized symbol [ %s ] in scope [ %s ] at (%d:%d)",
+						symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
+					warnCount++
+				}
+
 				symbol.beenUsed = true
 				Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
 					symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
@@ -411,6 +417,12 @@ func getNodeType(node *Node, examineChildren bool, markUsed bool) string {
 			}
 
 			if markUsed {
+				if !symbol.isInit {
+					Warn(fmt.Sprintf("Usage of uninitialized symbol [ %s ] in scope [ %s ] at (%d:%d)",
+						symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
+					warnCount++
+				}
+
 				symbol.beenUsed = true
 				Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
 					symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
