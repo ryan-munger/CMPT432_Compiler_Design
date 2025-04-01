@@ -291,6 +291,8 @@ func scopeTypeCheck(node *Node) {
 			symbol, err := lookup(node.Token.trueContent, node.Token.location)
 			if err == nil {
 				symbol.beenUsed = true
+				Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
+					symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
 			}
 		}
 
@@ -313,12 +315,16 @@ func newDownScope() {
 	if curSymbolTableTree.rootTable == nil {
 		curSymbolTableTree.rootTable = NewSymbolTable("0", nil)
 		curSymbolTable = curSymbolTableTree.rootTable
+		Debug(fmt.Sprintf("Encountered <Block>; Created root symbol table scope [ %s ]",
+			curSymbolTable.scopeID), "SEMANTIC ANALYZER")
 	} else {
 		// not using 1a, 1b bc limit of alpha is 26 possible blocks at certain depth
 		var newScopeName string = fmt.Sprintf("%d.%d", scopeDepth, len(curSymbolTable.subTables))
 		var newScope *SymbolTable = NewSymbolTable(newScopeName, curSymbolTable)
 		curSymbolTable.AddSubTable(newScope)
 		curSymbolTable = newScope
+		Debug(fmt.Sprintf("Encountered <Block>; Created new symbol table scope [ %s ] under parent table scope [ %s ]",
+			curSymbolTable.scopeID, curSymbolTable.parentTable.scopeID), "SEMANTIC ANALYZER")
 	}
 	scopeDepth++
 }
@@ -406,6 +412,8 @@ func getNodeType(node *Node, examineChildren bool, markUsed bool) string {
 
 			if markUsed {
 				symbol.beenUsed = true
+				Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
+					symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
 			}
 			return symbol.dataType
 
@@ -433,6 +441,8 @@ func analyzeVarDecl(node *Node) {
 		var dType string = node.Children[0].Token.trueContent
 		var entry *SymbolEntry = NewTableEntry(name, dType, pos)
 		curSymbolTable.AddEntry(name, entry)
+		Debug(fmt.Sprintf("Declared new entry [ %s ] of type [ %s ] in scope [ %s ]",
+			name, dType, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
 	}
 }
 
@@ -450,8 +460,10 @@ func analyzeAssign(node *Node) {
 		return // bad ID - go no further
 	} else if assignee.dataType != assignToType {
 		typeMismatch("assign", assigneeNode.Token.location, assignee.dataType, assignToType)
-	} else {
+	} else if !assignee.isInit {
 		assignee.isInit = true
+		Debug(fmt.Sprintf("Initialized entry [ %s ] in scope [ %s ]",
+			assignee.name, curSymbolTable.scopeID), "SEMANTIC ANALYZER")
 	}
 }
 
