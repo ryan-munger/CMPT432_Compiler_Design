@@ -2,8 +2,10 @@
     string a
     a = "please work" 
     int b
-    b = 1 + "erm" /*not valid but needs to be in ast*/
+    
     if (true != (a == "work please")) {
         print("not the same")
     }
+
+    b = 1 + "erm" /*not valid but needs to be in ast*/
 } $

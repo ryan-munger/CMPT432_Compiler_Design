@@ -3,6 +3,5 @@
     int b
     b = 1
     a = b
-    print(a)
-    
+    print((a == b))
 } $

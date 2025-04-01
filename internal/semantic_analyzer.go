@@ -20,6 +20,18 @@ var (
 	scopeDepth          int = 0 // just for naming the scopes
 )
 
+func resetAll() {
+	curAst = nil
+	curParent = nil
+	parentStack = []*Node{}
+	stringBuffer = []*Node{}
+	curSymbolTableTree = nil
+	curSymbolTable = nil
+	errorCount = 0
+	warnCount = 0
+	scopeDepth = 0
+}
+
 func clearStringBuffer() {
 	stringBuffer = []*Node{}
 }
@@ -83,6 +95,7 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 		Info(fmt.Sprintf("Compilation of program %d aborted due to semantic analysis error(s).",
 			programNum+1), "GOPILER", false)
 	}
+	resetAll()
 }
 
 // Initialize AST for a program
@@ -211,7 +224,7 @@ func transformBoolExpr(node *Node) {
 func transformToken(node *Node) {
 	var tokenNode *Node = CopyNode(node)
 
-	if node.Type == "Token" && node.Token.tType == Character {
+	if node.Type == "Token" && (node.Token.tType == Character || node.Token.content == "QUOTE") {
 		stringBuffer = append(stringBuffer, node)
 	} else if node.Type == "Token" && !isGarbage(node.Token.content) {
 		curParent.AddChild(tokenNode)
@@ -221,8 +234,11 @@ func transformToken(node *Node) {
 // empty buffer of char nodes into one node w a string value
 func collapseCharList() *Node {
 	var collapsedStr string = ""
+	// we don't want the quotes, but use them for position data when empty string
 	for _, charNode := range stringBuffer {
-		collapsedStr += charNode.Token.trueContent
+		if charNode.Token.content != "QUOTE" {
+			collapsedStr += charNode.Token.trueContent
+		}
 	}
 
 	var collapsedCharToken Token = Token{

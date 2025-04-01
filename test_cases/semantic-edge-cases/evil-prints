@@ -1,0 +1,25 @@
+/* Here's a bunch of print statements */
+  {
+    print("i")
+      print("think")
+      
+      {
+        print("i")
+        print("can")
+          
+          print("i")
+        print("think")
+          print("i")
+          
+          {
+        print("can")       
+          }
+      }
+      
+    print("i")
+    print("think")
+      print("")
+      print("i")
+      print("")
+      print("can")
+  }$
