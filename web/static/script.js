@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(data => {
                 codeInput.value = data;
+                updateLineNumbers();
                 document.getElementById("consoleOutput").textContent = "";
             })
             .catch(error => {
@@ -98,11 +99,54 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     });
 
-
-    // Clear code function
-    document.getElementById("clearButton").addEventListener("click", function () {
-        codeInput.value = "";
-        document.getElementById("consoleOutput").textContent = "";
+    const lineNumbers = document.getElementById('lineNumbers');
+    const clearButton = document.getElementById('clearButton');
+    
+    // Function to update line numbers
+    function updateLineNumbers() {
+        const lines = codeInput.value.split('\n');
+        let lineNumbersText = '';
+        
+        for (let i = 1; i <= lines.length; i++) {
+            lineNumbersText += i + '\n';
+        }
+        
+        lineNumbers.textContent = lineNumbersText;
+    }
+    
+    // Initialize with at least one line number
+    lineNumbers.textContent = '1';
+    
+    // Add event listeners
+    codeInput.addEventListener('input', updateLineNumbers);
+    codeInput.addEventListener('scroll', () => {
+        lineNumbers.scrollTop = codeInput.scrollTop;
+    });
+    
+    // Match line height between textarea and line numbers
+    codeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = codeInput.selectionStart;
+            const end = codeInput.selectionEnd;
+            
+            codeInput.value = codeInput.value.substring(0, start) + '    ' + codeInput.value.substring(end);
+            codeInput.selectionStart = codeInput.selectionEnd = start + 4;
+            updateLineNumbers();
+        }
+    });
+    
+    // Clear button functionality
+    clearButton.addEventListener('click', () => {
+        codeInput.value = '';
+        updateLineNumbers();
+    });
+    
+    // Ensure line numbers are updated when the page loads
+    window.addEventListener('load', () => {
+        updateLineNumbers();
+        // Set focus to the textarea
+        codeInput.focus();
     });
 });
 

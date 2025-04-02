@@ -51,15 +51,15 @@
             <!-- Input Section -->
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold text-white mb-2">Input</h2>
-                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[24rem]">
-                    <textarea id="codeInput"
-                        class="w-full h-full p-3 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-green-400 rounded-lg"></textarea>
+                <div class="bg-gray-700 rounded-lg border border-gray-600 h-[24rem] flex">
+                    <!-- Line numbers container with pre tag for preserving whitespace -->
+                    <div id="lineNumbers" class="bg-gray-800 text-gray-500 py-3 px-2 text-right min-w-[40px] font-mono select-none border-r border-gray-600 overflow-hidden whitespace-pre"></div>
+                    <!-- Text area -->
+                    <textarea id="codeInput" class="w-full h-full p-3 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-green-400 rounded-r-lg font-mono" spellcheck="false"></textarea>
                 </div>
                 <div class="flex gap-4 mt-4">
-                    <button id="compileButton"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Compile</button>
-                    <button id="clearButton"
-                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Clear</button>
+                    <button id="compileButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Compile</button>
+                    <button id="clearButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Clear</button>
                 </div>
             </div>
 
