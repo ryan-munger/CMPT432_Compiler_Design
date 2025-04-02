@@ -133,6 +133,7 @@ func ResetAll() {
 	warnCount = 0
 	scopeDepth = 0
 	scopePopulation = make(map[int]int)
+	errorMap = make(map[int]string)
 
 	printTreeBuffer = ""
 }
