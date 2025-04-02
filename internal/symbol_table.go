@@ -89,3 +89,50 @@ func (table *SymbolTable) collectEntries(sb *strings.Builder) {
 		subTable.collectEntries(sb)
 	}
 }
+
+func (stt *SymbolTableTree) ToHtmlTable() string {
+	var sb strings.Builder
+
+	// Start HTML table
+	sb.WriteString("<table border=\"1\" cellspacing=\"0\" cellpadding=\"5\" style=\"border-collapse: collapse; text-align: left;\">\n")
+
+	// Table headers
+	sb.WriteString("<tr>")
+	sb.WriteString("<th>Scope</th><th>Name</th><th>Type</th><th>Position</th><th>Init?</th><th>Used?</th>")
+	sb.WriteString("</tr>\n")
+
+	// Gather entries
+	stt.rootTable.collectEntriesHtml(&sb)
+
+	// End HTML table
+	sb.WriteString("</table>\n")
+
+	return sb.String()
+}
+
+func (table *SymbolTable) collectEntriesHtml(sb *strings.Builder) {
+	if table == nil {
+		return
+	}
+
+	// Convert map to slice for sorting - for better readability
+	entrySlice := make([]*SymbolEntry, 0, len(table.entries))
+	for _, entry := range table.entries {
+		entrySlice = append(entrySlice, entry)
+	}
+
+	// Sort slice by name ASC
+	sort.Slice(entrySlice, func(i, j int) bool {
+		return entrySlice[i].name < entrySlice[j].name
+	})
+
+	for _, entry := range entrySlice {
+		pos := fmt.Sprintf("(%d:%d)", entry.position.line, entry.position.startPos)
+		sb.WriteString(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%t</td><td>%t</td></tr>\n",
+			table.scopeID, entry.name, entry.dataType, pos, entry.isInit, entry.beenUsed))
+	}
+
+	for _, subTable := range table.subTables {
+		subTable.collectEntriesHtml(sb)
+	}
+}

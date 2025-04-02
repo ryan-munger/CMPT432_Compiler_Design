@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     const testSelector = document.getElementById("exampleSelector");
-    testSelector.addEventListener("change", function() {
+    testSelector.addEventListener("change", function () {
         const selectedTest = this.value;
         if (selectedTest) {
             loadExampleContent(selectedTest);
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Function to load test content
-    function loadExampleContent(testName) {        
+    function loadExampleContent(testName) {
         fetch(`/static/examples/${testName}.txt`)
             .then(response => {
                 if (!response.ok) {
@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("compileButton").addEventListener("click", function () {
         const code = document.getElementById("codeInput").value;
         const verbose = document.getElementById("verboseButton").textContent.includes("ON");
-    
+
         fetch("/compile", {
             method: "POST",
             headers: {
@@ -67,33 +67,37 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             body: JSON.stringify({ code: code, verbose: verbose }),
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.output) {
-                document.getElementById("consoleOutput").innerHTML = data.output;
-    
-                // After successfully receiving the compilation output, send GET requests to /getSymbolTables and /getMachineCode
-                return Promise.all([
-                    fetch("/getSymbolTables").then(response => response.json()),
-                    fetch("/getMachineCode").then(response => response.text()), 
-                    fetch("/getCST").then(response => response.text()), 
-                    fetch("/getAST").then(response => response.text()) 
-                ]);
-            } else {
-                throw new Error("Compilation failed");
-            }
-        })
-        .then(([symbolData, machineCodeData, cstData, astData]) => {
-            document.getElementById("symbolTable").innerHTML = JSON.stringify(symbolData, null, 2);
-            document.getElementById('machineCode').textContent = machineCodeData; 
-            document.getElementById('cstBox').textContent = cstData; 
-            document.getElementById('astBox').textContent = astData; 
-        })
-        .catch(error => {
-            document.getElementById("consoleOutput").textContent = "Error: " + error;
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.output) {
+                    document.getElementById("consoleOutput").innerHTML = data.output;
+
+                    // After successfully receiving the compilation output, send GET requests 
+                    return Promise.all([
+                        fetch("/getSymbolTables").then(response => response.json()),
+                        fetch("/getMachineCode").then(response => response.text()),
+                        fetch("/getCST").then(response => response.text()),
+                        fetch("/getAST").then(response => response.text())
+                    ]);
+                } else {
+                    throw new Error("Compilation failed");
+                }
+            })
+            .then(([symbolData, machineCodeData, cstData, astData]) => {
+                // for evil tailwind
+                symbolData = symbolData.replace(/<table/g, '<table class="w-full border border-gray-500"');
+                symbolData = symbolData.replace(/<th/g, '<th class="border border-gray-500 px-2 py-1 bg-gray-600 text-white"');
+                symbolData = symbolData.replace(/<td/g, '<td class="border border-gray-500 px-2 py-1 text-green-400"');
+                document.getElementById("symbolTable").innerHTML = symbolData;
+                document.getElementById('machineCode').textContent = machineCodeData;
+                document.getElementById('cstBox').textContent = cstData;
+                document.getElementById('astBox').textContent = astData;
+            })
+            .catch(error => {
+                document.getElementById("consoleOutput").textContent = "Error: " + error;
+            });
     });
-    
+
 
     // Clear code function
     document.getElementById("clearButton").addEventListener("click", function () {

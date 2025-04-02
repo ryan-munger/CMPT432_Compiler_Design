@@ -656,5 +656,10 @@ func epsilonProduction() {
 }
 
 func GetCst() string {
-	return "cst"
+	var cstString string = ""
+	for i, cst := range cstList {
+		cstString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
+		cstString += cst.drawTree() + "\n"
+	}
+	return cstString
 }

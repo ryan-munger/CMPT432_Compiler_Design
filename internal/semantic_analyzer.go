@@ -539,9 +539,19 @@ func analyzeCompare(node *Node) {
 }
 
 func GetAst() string {
-	return "ast"
+	var astString string = ""
+	for i, ast := range astList {
+		astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
+		astString += ast.drawTree() + "\n"
+	}
+	return astString
 }
 
 func GetSymbolTables() string {
-	return "hi"
+	var tablesHtml string = ""
+	for i, tbl := range symbolTableTreeList {
+		tablesHtml += fmt.Sprintf("<b>Program %d</b>", i+1)
+		tablesHtml += tbl.ToHtmlTable() + "<br></br>"
+	}
+	return tablesHtml
 }

@@ -50,17 +50,18 @@ func StartServer(expose bool) {
 
 	r.GET("/getCST", func(c *gin.Context) {
 		cst := internal.GetCst()
-		c.JSON(http.StatusOK, cst)
+		c.String(http.StatusOK, cst)
 	})
 
 	r.GET("/getAST", func(c *gin.Context) {
 		ast := internal.GetAst()
-		c.JSON(http.StatusOK, ast)
+		c.String(http.StatusOK, ast)
 	})
 
 	// for symbol table display box
 	r.GET("/getSymbolTables", func(c *gin.Context) {
 		symbolTables := internal.GetSymbolTables()
+		log.Println("Sending Symbol Tables:", symbolTables) // Debugging log
 		c.JSON(http.StatusOK, symbolTables)
 	})
 
