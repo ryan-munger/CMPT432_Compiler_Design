@@ -531,7 +531,7 @@ func analyzeCompare(node *Node) {
 }
 
 func GetAst() string {
-	if len(cstList) == 0 {
+	if len(astList) == 0 {
 		return fmt.Sprintf("Program 1\n%s\nNo AST generated due to %s error\n\n",
 			strings.Repeat("-", 75), errorMap[0])
 	}
@@ -549,7 +549,7 @@ func GetAst() string {
 }
 
 func GetSymbolTables() string {
-	if len(cstList) == 0 {
+	if len(symbolTableTreeList) == 0 {
 		return fmt.Sprintf("<b>Program 1</b><p>No symbol tables generated due to %s error</p><br></br>",
 			errorMap[0])
 	}
