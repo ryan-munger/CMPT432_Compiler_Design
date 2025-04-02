@@ -531,22 +531,36 @@ func analyzeCompare(node *Node) {
 }
 
 func GetAst() string {
+	if len(cstList) == 0 {
+		return fmt.Sprintf("Program 1\n%s\nNo AST generated due to %s error\n\n",
+			strings.Repeat("-", 75), errorMap[0])
+	}
+
 	var astString string = ""
 	for i, ast := range astList {
+		astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
 		if !hadError(i) || (errorMap[i] != "semantic" && errorMap[i] != "parser" && errorMap[i] != "lexer") {
-			astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
 			astString += ast.drawTree() + "\n"
+		} else {
+			astString += fmt.Sprintf("\nNo AST generated due to %s error\n\n", errorMap[i])
 		}
 	}
 	return astString
 }
 
 func GetSymbolTables() string {
+	if len(cstList) == 0 {
+		return fmt.Sprintf("<b>Program 1</b><p>No symbol tables generated due to %s error</p><br></br>",
+			errorMap[0])
+	}
+
 	var tablesHtml string = ""
 	for i, tbl := range symbolTableTreeList {
+		tablesHtml += fmt.Sprintf("<b>Program %d</b>", i+1)
 		if !hadError(i) || (errorMap[i] != "semantic" && errorMap[i] != "parser" && errorMap[i] != "lexer") {
-			tablesHtml += fmt.Sprintf("<b>Program %d</b>", i+1)
 			tablesHtml += tbl.ToHtmlTable() + "<br></br>"
+		} else {
+			tablesHtml += fmt.Sprintf("<p>No symbol tables generated due to %s error</p><br></br>", errorMap[i])
 		}
 	}
 	return tablesHtml

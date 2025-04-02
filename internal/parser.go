@@ -657,12 +657,19 @@ func epsilonProduction() {
 }
 
 func GetCst() string {
+	if len(cstList) == 0 {
+		return fmt.Sprintf("Program 1\n%s\nNo CST generated due to %s error\n\n",
+			strings.Repeat("-", 75), errorMap[0])
+	}
+
 	var cstString string = ""
 	for i, cst := range cstList {
 		// don't display programs that had error before CST generation is complete
+		cstString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
 		if !hadError(i) || (errorMap[i] != "parser" && errorMap[i] != "lexer") {
-			cstString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
 			cstString += cst.drawTree() + "\n"
+		} else {
+			cstString += fmt.Sprintf("\nNo CST generated due to %s error\n\n", errorMap[i])
 		}
 	}
 	return cstString
