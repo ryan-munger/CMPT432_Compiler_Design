@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
         verboseFlag = !verboseFlag;
         verboseButton.textContent = "Verbose Mode: " + (verboseFlag ? "ON" : "OFF");
         verboseButton.classList.toggle("bg-green-500", verboseFlag);
-        verboseButton.classList.toggle("bg-red-600", !verboseFlag);
+        verboseButton.classList.toggle("bg-red-500", !verboseFlag);
     });
 
     // Capture Tab Key in the textarea
