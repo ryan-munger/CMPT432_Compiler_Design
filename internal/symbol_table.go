@@ -49,7 +49,29 @@ func (table *SymbolTable) EntryExists(id string) bool {
 	return exists
 }
 
+func (st *SymbolTable) IsEmpty() bool {
+	// current table has entries
+	if len(st.entries) > 0 {
+		return false
+	}
+
+	// recursively check subTables
+	for _, subTable := range st.subTables {
+		if !subTable.IsEmpty() {
+			return false
+		}
+	}
+
+	// when no entries in current table and all subTables are empty, return true
+	return true
+}
+
 func (stt *SymbolTableTree) ToString() string {
+	// recursively checks children as well - prevent us just having table headers and nothing else
+	if stt.rootTable.IsEmpty() {
+		return "This program does not contain any symbols."
+	}
+
 	var sb strings.Builder
 
 	// Table headers
@@ -91,6 +113,10 @@ func (table *SymbolTable) collectEntries(sb *strings.Builder) {
 }
 
 func (stt *SymbolTableTree) ToHtmlTable() string {
+	if stt.rootTable.IsEmpty() {
+		return "<p>This program does not contain any symbols.</p>"
+	}
+
 	var sb strings.Builder
 
 	// Start HTML table
