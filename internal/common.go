@@ -121,6 +121,7 @@ func ResetAll() {
 	cstList = nil
 
 	astList = nil
+	astStrings = nil
 	curAst = nil
 	curParent = nil
 	parentStack = nil

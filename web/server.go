@@ -55,6 +55,7 @@ func StartServer(expose bool) {
 
 	r.GET("/getAST", func(c *gin.Context) {
 		ast := internal.GetAst()
+		log.Println(ast)
 		c.String(http.StatusOK, ast)
 	})
 

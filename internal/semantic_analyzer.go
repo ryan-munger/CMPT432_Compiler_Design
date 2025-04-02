@@ -19,6 +19,7 @@ var (
 	warnCount           int         = 0
 	scopeDepth          int         = 0 // just for naming the scopes
 	scopePopulation     map[int]int     // see how many tables at depth for naming
+	astStrings          []string
 )
 
 func populationExists(candidate int) bool {
@@ -66,8 +67,9 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 	Debug("Generating AST...", "SEMANTIC ANALYZER")
 	initAst(programNum)
 	buildAST(cst)
+	astStrings = append(astStrings, curAst.drawTree())
 	Info(fmt.Sprintf("Program %d Abstract Syntax Tree (AST):\n%s\n%s", programNum+1, strings.Repeat("-", 75),
-		curAst.drawTree()), "GOPILER", true)
+		astStrings[programNum]), "GOPILER", true)
 
 	// perform semantic analysis
 	Debug("Performing Scope and Type checks...", "SEMANTIC ANALYZER")
@@ -531,16 +533,16 @@ func analyzeCompare(node *Node) {
 }
 
 func GetAst() string {
-	if len(astList) == 0 {
+	if len(astStrings) == 0 {
 		return fmt.Sprintf("Program 1\n%s\nNo AST generated due to %s error\n\n",
 			strings.Repeat("-", 75), errorMap[0])
 	}
-
 	var astString string = ""
-	for i, ast := range astList {
+	for i, ast := range astStrings {
 		astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
 		if !hadError(i) || (errorMap[i] != "semantic" && errorMap[i] != "parser" && errorMap[i] != "lexer") {
-			astString += ast.drawTree() + "\n"
+			println(ast)
+			astString += ast + "\n"
 		} else {
 			astString += fmt.Sprintf("\nNo AST generated due to %s error\n\n", errorMap[i])
 		}
