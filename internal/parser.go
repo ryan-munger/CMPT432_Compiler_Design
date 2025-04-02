@@ -91,6 +91,7 @@ func Parse(tokenStream []Token, programNum int) {
 		SemanticAnalysis(cstList[programNum], programNum)
 	} else {
 		Fail("Parsing aborted due to an error.", "PARSER")
+		errorMap[programNum] = "parser"
 		cstList[programNum] = TokenTree{} // free memory from the CST since it cannot be used
 		Info(fmt.Sprintf("Compilation of program %d aborted due to parser error.", programNum+1), "GOPILER", false)
 	}
@@ -658,8 +659,11 @@ func epsilonProduction() {
 func GetCst() string {
 	var cstString string = ""
 	for i, cst := range cstList {
-		cstString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
-		cstString += cst.drawTree() + "\n"
+		// don't display programs that had error before CST generation is complete
+		if !hadError(i) || (errorMap[i] != "parser" && errorMap[i] != "lexer") {
+			cstString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
+			cstString += cst.drawTree() + "\n"
+		}
 	}
 	return cstString
 }

@@ -73,6 +73,7 @@ func passFailProgram(programNum int, errorCount int, warningCount int, tokenStre
 		Info(fmt.Sprintf("Compilation of program %d aborted due to lexer error.", programNum+1), "GOPILER", false)
 		tokenStream[programNum] = []Token{} // release memory as tokens will never be used
 		*alreadyFailed = true
+		errorMap[programNum] = "lexer"
 	}
 }
 

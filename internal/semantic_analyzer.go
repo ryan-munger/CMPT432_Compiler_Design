@@ -21,19 +21,6 @@ var (
 	scopePopulation     map[int]int     // see how many tables at depth for naming
 )
 
-func resetAll() {
-	curAst = nil
-	curParent = nil
-	parentStack = []*Node{}
-	stringBuffer = []*Node{}
-	curSymbolTableTree = nil
-	curSymbolTable = nil
-	errorCount = 0
-	warnCount = 0
-	scopeDepth = 0
-	scopePopulation = make(map[int]int)
-}
-
 func populationExists(candidate int) bool {
 	_, exists := scopePopulation[candidate]
 	return exists
@@ -97,12 +84,17 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 	} else {
 		Fail(fmt.Sprintf("Semantic Analysis failed with %d error(s) and %d warning(s).",
 			errorCount, warnCount), "SEMANTIC ANALYZER")
+		errorMap[programNum] = "semantic"
 		astList[programNum] = TokenTree{}                    // free memory from the AST since it cannot be used
 		symbolTableTreeList[programNum] = &SymbolTableTree{} // free this up too
 		Info(fmt.Sprintf("Compilation of program %d aborted due to semantic analysis error(s).",
 			programNum+1), "GOPILER", false)
 	}
-	resetAll()
+	// reset for next program
+	errorCount = 0
+	warnCount = 0
+	scopeDepth = 0
+	scopePopulation = make(map[int]int)
 }
 
 // Initialize AST for a program
@@ -541,8 +533,10 @@ func analyzeCompare(node *Node) {
 func GetAst() string {
 	var astString string = ""
 	for i, ast := range astList {
-		astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
-		astString += ast.drawTree() + "\n"
+		if !hadError(i) || (errorMap[i] != "semantic" && errorMap[i] != "parser" && errorMap[i] != "lexer") {
+			astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
+			astString += ast.drawTree() + "\n"
+		}
 	}
 	return astString
 }
@@ -550,8 +544,10 @@ func GetAst() string {
 func GetSymbolTables() string {
 	var tablesHtml string = ""
 	for i, tbl := range symbolTableTreeList {
-		tablesHtml += fmt.Sprintf("<b>Program %d</b>", i+1)
-		tablesHtml += tbl.ToHtmlTable() + "<br></br>"
+		if !hadError(i) || (errorMap[i] != "semantic" && errorMap[i] != "parser" && errorMap[i] != "lexer") {
+			tablesHtml += fmt.Sprintf("<b>Program %d</b>", i+1)
+			tablesHtml += tbl.ToHtmlTable() + "<br></br>"
+		}
 	}
 	return tablesHtml
 }

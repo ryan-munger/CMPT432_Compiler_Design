@@ -61,7 +61,6 @@ func StartServer(expose bool) {
 	// for symbol table display box
 	r.GET("/getSymbolTables", func(c *gin.Context) {
 		symbolTables := internal.GetSymbolTables()
-		log.Println("Sending Symbol Tables:", symbolTables) // Debugging log
 		c.JSON(http.StatusOK, symbolTables)
 	})
 
@@ -81,6 +80,7 @@ func StartServer(expose bool) {
 }
 
 func runCompiler(code string, verbose bool) string {
+	internal.ResetAll()
 	var output string
 
 	internal.SetVerbose(verbose)

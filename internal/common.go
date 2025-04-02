@@ -3,20 +3,21 @@ package internal
 import (
 	"fmt"
 	"html"
-	"sync"
 
 	"github.com/fatih/color"
 )
 
 var (
-	webMode   bool       // Flag to toggle between CLI and Web mode
-	logBuffer string     // Stores log output for Web mode
-	mu        sync.Mutex // Ensures safe concurrent access
+	webMode   bool // Flag to toggle between CLI and Web mode
+	Verbose   bool
+	logBuffer string                                // Stores log output for Web mode
+	errorMap  map[int]string = make(map[int]string) // remember if a program had to halt and where
 )
 
-// capitalized = export
-// lowercase = internal
-var Verbose bool
+func hadError(candidate int) bool {
+	_, exists := errorMap[candidate]
+	return exists
+}
 
 func SetVerbose(toggle bool) {
 	Verbose = toggle
@@ -27,9 +28,7 @@ func SetWebMode(toggle bool) {
 }
 
 func appendLog(msg string) {
-	mu.Lock()
 	logBuffer += msg
-	mu.Unlock()
 }
 
 // web mode needs html to render
@@ -103,9 +102,37 @@ func CriticalError(location string, err interface{}) {
 
 // Retrieve log output for web responses
 func GetLogOutput() string {
-	mu.Lock()
-	defer mu.Unlock()
 	output := logBuffer
 	logBuffer = "" // Clear after reading
 	return output
+}
+
+// erase everything between compiles in webapp just in case
+func ResetAll() {
+	logBuffer = ""
+	memory = [256]byte{}
+	tokens = nil
+	liveTokenIdx = 0
+	liveToken = Token{}
+	parseError = false
+	alternateWarning = ""
+	pNum = 0
+	currentParent = nil
+	cstList = nil
+
+	astList = nil
+	curAst = nil
+	curParent = nil
+	parentStack = nil
+	stringBuffer = nil
+	symbolTableTreeList = nil
+	curSymbolTableTree = nil
+	curSymbolTable = nil
+
+	errorCount = 0
+	warnCount = 0
+	scopeDepth = 0
+	scopePopulation = make(map[int]int)
+
+	printTreeBuffer = ""
 }
