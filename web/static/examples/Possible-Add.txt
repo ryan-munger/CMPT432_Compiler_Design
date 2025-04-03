@@ -1,0 +1,5 @@
+/* Does the err message include the intop (+) as a possible next token? */
+{
+    int a
+    a = 42
+}$

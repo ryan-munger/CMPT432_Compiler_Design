@@ -1,0 +1,7 @@
+{
+    in/*COMMENT*/ta
+    str/*ong*/ing
+    =/*COMMENT*/=
+    !/*COMMENT*/=int a
+    "h/*O*/i"
+}$

@@ -28,15 +28,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    const testSelector = document.getElementById("exampleSelector");
-    testSelector.addEventListener("change", function () {
-        const selectedTest = this.value;
-        if (selectedTest) {
-            loadExampleContent(selectedTest);
-        }
+    // Select all valid menu items that should update the textbox
+    document.querySelectorAll("#dropdownContent a[data-value]").forEach(item => {
+        item.addEventListener("click", function (event) {
+            event.preventDefault(); // Prevent the default anchor action
+
+            const selectedTest = this.getAttribute("data-value");
+            if (selectedTest) {
+                loadExampleContent(selectedTest);
+            }
+        });
     });
 
-    // Function to load test content
     function loadExampleContent(testName) {
         fetch(`/static/examples/${testName}.txt`)
             .then(response => {
@@ -46,12 +49,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 return response.text();
             })
             .then(data => {
-                codeInput.value = data;
+                document.getElementById("codeInput").value = data; // Ensure `codeInput` exists
                 updateLineNumbers();
                 document.getElementById("consoleOutput").textContent = "";
             })
             .catch(error => {
-                codeInput.textContent = "Error loading test: " + error.message;
+                document.getElementById("codeInput").textContent = "Error loading test: " + error.message;
                 document.getElementById("consoleOutput").textContent = "";
             });
     }
@@ -123,19 +126,6 @@ document.addEventListener("DOMContentLoaded", function () {
         lineNumbers.scrollTop = codeInput.scrollTop;
     });
 
-    // Match line height between textarea and line numbers
-    codeInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab') {
-            e.preventDefault();
-            const start = codeInput.selectionStart;
-            const end = codeInput.selectionEnd;
-
-            codeInput.value = codeInput.value.substring(0, start) + '    ' + codeInput.value.substring(end);
-            codeInput.selectionStart = codeInput.selectionEnd = start + 4;
-            updateLineNumbers();
-        }
-    });
-
     // Clear button functionality
     clearButton.addEventListener('click', () => {
         codeInput.value = '';
@@ -149,29 +139,12 @@ document.addEventListener("DOMContentLoaded", function () {
         codeInput.focus();
     });
 
-
     const dropdownButton = document.getElementById('exampleSelector');
     const dropdownContent = document.getElementById('dropdownContent');
 
     // Toggle dropdown when clicking the button
     dropdownButton.addEventListener('click', function () {
         dropdownContent.classList.toggle('hidden');
-    });
-
-    // Handle click events for all menu items with data-value
-    document.querySelectorAll('[data-value]').forEach(item => {
-        item.addEventListener('click', function (e) {
-            e.preventDefault();
-            const value = this.getAttribute('data-value');
-            dropdownButton.textContent = this.textContent;
-            dropdownContent.classList.add('hidden');
-
-            // Dispatch a custom event that your existing code can listen for
-            const event = new CustomEvent('exampleSelected', {
-                detail: { value: value }
-            });
-            document.dispatchEvent(event);
-        });
     });
 
     // Close the dropdown when clicking outside
