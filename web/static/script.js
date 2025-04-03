@@ -52,10 +52,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.getElementById("codeInput").value = data; // Ensure `codeInput` exists
                 updateLineNumbers();
                 document.getElementById("consoleOutput").textContent = "";
+                document.getElementById("symbolTable").textContent = "";
+                document.getElementById("machineCode").textContent = "";
+                document.getElementById("cstBox").textContent = "";
+                document.getElementById("astBox").textContent = "";
             })
             .catch(error => {
                 document.getElementById("codeInput").textContent = "Error loading test: " + error.message;
                 document.getElementById("consoleOutput").textContent = "";
+                document.getElementById("symbolTable").textContent = "";
+                document.getElementById("machineCode").textContent = "";
+                document.getElementById("cstBox").textContent = "";
+                document.getElementById("astBox").textContent = "";
             });
     }
 

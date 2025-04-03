@@ -1,0 +1,12 @@
+{
+    int a
+    int a
+    int b
+    a = 3
+    b = 3
+    {
+        int b
+    }
+    int b
+    print(a)
+}$

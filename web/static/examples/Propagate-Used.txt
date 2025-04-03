@@ -1,0 +1,25 @@
+{
+    int a
+    int b
+    int c
+    a = 1
+    b = a
+    {
+        int d
+        int e
+        int f
+        c = b
+        d = c
+        {
+            int g
+            int h
+            e = d
+            f = e
+            {
+                g = f
+                h = g
+                print(h)
+            }
+        }
+    }
+}$
