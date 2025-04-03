@@ -23,13 +23,145 @@
         <!-- Buttons row - All three buttons in line -->
         <div class="grid grid-cols-2 gap-6 mb-2">
             <div class="flex items-center gap-4">
-                <select id="exampleSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">
-                    <option value="" disabled selected>Select Example</option>
-                    <option value="Hello-Compiler">Hello-Compiler</option>
-                    <option value="Multi-Program">Multi-Program</option>
-                    <option value="James-Bond-James">James-Bond-James</option>
-                    <option value="Lex-Without-Spaces">Lex-Without-Spaces</option>
-                </select>
+                <!-- Replaced dropdown with nested dropdown -->
+                <div class="relative inline-block text-left">
+                    <button id="exampleSelector"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">
+                        Select Example
+                        <span class="ml-2">›</span>
+                    </button>
+
+                    <div id="dropdownContent"
+                        class="hidden absolute z-10 mt-2 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div class="py-1">
+                            <!-- Valid Programs -->
+                            <div class="group relative">
+                                <div
+                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                    Valid Programs
+                                    <span class="ml-2">›</span>
+
+                                    <!-- Valid Programs Submenu -->
+                                    <div
+                                        class="hidden group-hover:block absolute left-full top-0 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                        <div class="py-1">
+                                            <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                data-value="Hello-Compiler">Hello-Compiler</a>
+                                            <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                data-value="Multi-Program">Multi-Program</a>
+                                            <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                data-value="James-Bond-James">James-Bond-James</a>
+                                            <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                data-value="Lex-Without-Spaces">Lex-Without-Spaces</a>
+                                            <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                data-value="Spoon">Spoon</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Invalid Programs -->
+                            <div class="group relative">
+                                <div
+                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                    Invalid Programs
+                                    <span class="ml-2">›</span>
+
+                                    <!-- Invalid Programs Submenu -->
+                                    <div
+                                        class="hidden group-hover:block absolute left-full top-0 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                        <div class="py-1">
+                                            <!-- Nested items with their own submenus -->
+                                            <div class="group/nested relative">
+                                                <div
+                                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                                    Lex Error
+                                                    <span class="ml-2">›</span>
+
+                                                    <!-- Third level menu -->
+                                                    <div
+                                                        class="hidden group-hover/nested:block absolute left-full top-0 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                                        <div class="py-1">
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Missing-Semicolon">Missing Semicolon</a>
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Unmatched-Brackets">Unmatched Brackets</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="group/nested relative">
+                                                <div
+                                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                                    Parse Error
+                                                    <span class="ml-2">›</span>
+
+                                                    <!-- Third level menu -->
+                                                    <div
+                                                        class="hidden group-hover/nested:block absolute left-full top-0 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                                        <div class="py-1">
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Null-Reference">Null Reference</a>
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Divide-by-Zero">Divide by Zero</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="group/nested relative">
+                                                <div
+                                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                                    Semantic Error
+                                                    <span class="ml-2">›</span>
+
+                                                    <!-- Third level menu -->
+                                                    <div
+                                                        class="hidden group-hover/nested:block absolute left-full top-0 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                                        <div class="py-1">
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Null-Reference">Null Reference</a>
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Divide-by-Zero">Divide by Zero</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="group/nested relative">
+                                                <div
+                                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                                    Code Gen Error
+                                                    <span class="ml-2">›</span>
+
+                                                    <!-- Third level menu -->
+                                                    <div
+                                                        class="hidden group-hover/nested:block absolute left-full top-0 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                                        <div class="py-1">
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Null-Reference">Null Reference</a>
+                                                            <a href="#"
+                                                                class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                                                                data-value="Divide-by-Zero">Divide by Zero</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="flex justify-end gap-4">
                 <!-- Show Grammar Button -->
@@ -53,13 +185,19 @@
                 <h2 class="text-xl font-semibold text-white mb-2">Input</h2>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[24rem] flex">
                     <!-- Line numbers container with pre tag for preserving whitespace -->
-                    <div id="lineNumbers" class="bg-gray-800 text-gray-500 py-3 px-2 text-right min-w-[40px] font-mono select-none border-r border-gray-600 overflow-hidden whitespace-pre"></div>
+                    <div id="lineNumbers"
+                        class="bg-gray-800 text-gray-500 py-3 px-2 text-right min-w-[40px] font-mono select-none border-r border-gray-600 overflow-hidden whitespace-pre">
+                    </div>
                     <!-- Text area -->
-                    <textarea id="codeInput" class="w-full h-full p-3 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-green-400 rounded-r-lg font-mono" spellcheck="false"></textarea>
+                    <textarea id="codeInput"
+                        class="w-full h-full p-3 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-green-400 rounded-r-lg font-mono"
+                        spellcheck="false"></textarea>
                 </div>
                 <div class="flex gap-4 mt-4">
-                    <button id="compileButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Compile</button>
-                    <button id="clearButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Clear</button>
+                    <button id="compileButton"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Compile</button>
+                    <button id="clearButton"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Clear</button>
                 </div>
             </div>
 
@@ -67,8 +205,7 @@
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold text-white mb-2">Console</h2>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[24rem]">
-                    <pre id="consoleOutput"
-                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                    <pre id="consoleOutput" class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
                         style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>
@@ -89,32 +226,36 @@
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center">
                         <h2 class="text-xl font-semibold text-white">Machine Code</h2>
-                        <button id="copyButton" onclick="copyMachineCode()" class="ml-2 bg-gray-600 hover:bg-gray-500 text-white p-1 rounded-lg" title="Copy to clipboard">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        <button id="copyButton" onclick="copyMachineCode()"
+                            class="ml-2 bg-gray-600 hover:bg-gray-500 text-white p-1 rounded-lg"
+                            title="Copy to clipboard">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                             </svg>
                         </button>
                     </div>
-                    <button id="launchOSButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm" onclick="window.open('https://www.labouseur.com/commondocs/operating-systems/CyberCore/index.html', '_blank');">
+                    <button id="launchOSButton"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm"
+                        onclick="window.open('https://www.labouseur.com/commondocs/operating-systems/CyberCore/index.html', '_blank');">
                         Launch OS
-                    </button>                                      
+                    </button>
                 </div>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
-                    <pre id="machineCode"
-                        class="w-full h-full p-3 text-green-400 text-base overflow-auto"
+                    <pre id="machineCode" class="w-full h-full p-3 text-green-400 text-base overflow-auto"
                         style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>
         </div>
 
-         <!-- Tree Boxes -->
-         <div class="grid grid-cols-2 gap-6 mt-6">
+        <!-- Tree Boxes -->
+        <div class="grid grid-cols-2 gap-6 mt-6">
             <!-- CST Section -->
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold text-white mb-2">Concrete Syntax Tree (CST)</h2>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
-                    <pre id="cstBox"
-                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                    <pre id="cstBox" class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
                         style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>
@@ -123,8 +264,7 @@
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold text-white mb-2">Abstract Syntax Tree (AST)</h2>
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
-                    <pre id="astBox"
-                        class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
+                    <pre id="astBox" class="w-full h-full p-3 text-green-400 text-sm overflow-auto"
                         style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>
