@@ -1,0 +1,179 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Short Sectioned Assignment
+% LaTeX Template
+% Version 1.0 (5/5/12)
+%
+% This template has been downloaded from: http://www.LaTeXTemplates.com
+% Original author: % Frits Wenneker (http://www.howtotex.com)
+% License: CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% Modified by Alan G. Labouseur  - alan@labouseur.com, and Ryan Munger - ryan.munger1@marist.edu
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[letterpaper, 10pt]{article} 
+
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning}
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage{graphicx}
+\usepackage[lined,linesnumbered,commentsnumbered]{algorithm2e}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{fancyhdr} % Custom headers and footers
+\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
+\usepackage{lastpage}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{ulem}
+
+% Stolen from https://www.overleaf.com/learn/latex/Code_listing 
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\fancyhead{} % No page header - if you want one, create it in the same way as the footers below
+\fancyfoot[L]{} % Empty left footer
+\fancyfoot[C]{page \thepage\ of \pageref{LastPage}} % Page numbering for center footer
+\fancyfoot[R]{}
+
+\renewcommand{\headrulewidth}{0pt} % Remove header underlines
+\renewcommand{\footrulewidth}{0pt} % Remove footer underlines
+\setlength{\headheight}{13.6pt} % Customize the height of the header
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+
+\title{	
+   \normalfont \normalsize 
+   \textsc{CMPT 432 - Spring 2025 - Dr. Labouseur} \\[10pt] % Header stuff.
+   \horrule{0.5pt} \\[0.25cm] 	% Top horizontal rule
+   \huge Lab 9 -- Manipulating Grammars \\     	    % Assignment title
+   \horrule{0.5pt} \\[0.25cm] 	% Bottom horizontal rule
+}
+
+\author{Ryan Munger \\ \normalsize Ryan.Munger1@marist.edu}
+
+\date{\normalsize\today} 	% Today's date.
+
+\begin{document}
+
+\maketitle % Print the title
+
+%----------------------------------------------------------------------------------------
+%   CONTENT SECTION
+%----------------------------------------------------------------------------------------
+
+% - -- -  - -- -  - -- -  -
+\vspace{-.7cm}
+
+\section{Crafting a Compiler}
+\subsection{Exercise 5.5 -- LL(1) Grammar}
+Transform the following grammar into LL(1) form using the techniques presented in Section 5.5. 
+
+\begin{verbatim}
+    1 DeclList        → DeclList ; Decl
+    2                 | Decl
+    3 Decl            → IdList : Type
+    4 IdList          → IdList , id
+    5                 | id
+    6 Type            → ScalarType
+    7                 | array ( ScalarTypeList ) of Type
+    8 ScalarType      → id
+    9                 | Bound . . Bound
+    10 Bound          → Sign intconstant
+    11                | id
+    12 Sign           → +
+    13                | -
+    14                | Epsilon
+    15 ScalarTypelist → ScalarTypeList , ScalarType
+    16                | ScalarTyp
+\end{verbatim}
+
+
+\noindent
+LL(1) requires a unique prediction for each combination of nonterminal and lookahead symbols. We must eliminate common prefixes and left recursion. 
+
+\newpage \noindent
+\textbf{Updated grammar:}
+
+\begin{verbatim} 
+    1 DeclList         → Decl DeclList'
+    2 DeclList'        → ; Decl DeclList' 
+    3                  | Epsilon
+    4 Decl             → IdList : Type
+    5 IdList           → id IdList'
+    6 IdList'          → , id IdList' 
+    7                  | Epsilon
+    8 Type             → ScalarType
+    9                  | array ( ScalarTypeList ) of Type
+    10 ScalarType      → id
+    12                 | Bound . . Bound
+    13 Bound           → Sign intconstant
+    14                 | id
+    15 Sign            → +
+    16                 | -
+    17                 | Epsilon
+    18 ScalarTypeList  → ScalarType ScalarTypeList'
+    19 ScalarTypeList' → , ScalarType ScalarTypeList' 
+    20                 | Epsilon
+\end{verbatim}
+
+\section{Dragon Book}
+\subsection{Exercise 4.5.3 -- Bottom-Up Parsing}
+Give bottom-up parses for the following input strings and grammars. \\
+
+\noindent
+Input: 000111 \\
+Grammar: $S \rightarrow 0S1|01$\\
+
+\noindent
+\textbf{Bottom-Up/Shift Reduce Parse: }
+\begin{verbatim}
+Input:   | Operation  | Stack
+000111   | Shift 0    | Eps
+ 00111   | Shift 0    | 0
+  0111   | Shift 0    | 00
+   111   | Shift 1    | 000
+    11   | Reduce 01  | 0001
+    11   | Shift 1    | 00S
+     1   | Reduce 0S1 | 00S1
+     1   | Shift 1    | 0S
+     Eps | Reduce 0S1 | 0S1
+     Eps | Accept S   | S
+\end{verbatim}
+\newpage
+\noindent
+Input: aaa*a++ \\
+Grammar $S \rightarrow SS+|SS*|a$\\
+
+\noindent
+\textbf{Bottom-Up/Shift Reduce Parse: }
+\begin{verbatim}
+Input:    | Operation  | Stack
+aaa*a++   | Shift a    | Eps
+ aa*a++   | Reduce a   | a
+ aa*a++   | Shift a    | S
+  a*a++   | Reduce a   | Sa
+  a*a++   | Shift a    | SS
+   *a++   | Reduce a   | SSa
+   *a++   | Shift *    | SSS
+    a++   | Reduce SS* | SSS*
+     ++   | Shift a    | SS
+     ++   | Reduce a   | SSa
+     ++   | Shift +    | SSS
+      +   | Reduce SS+ | SSS+
+      +   | Shift +    | SS
+      Eps | Reduce SS+ | SS+
+      Eps | Accept S   | S
+\end{verbatim}
+
+\end{document}
