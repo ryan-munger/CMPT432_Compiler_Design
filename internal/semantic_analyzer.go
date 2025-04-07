@@ -20,7 +20,20 @@ var (
 	scopeDepth          int         = 0 // just for naming the scopes
 	scopePopulation     map[int]int     // see how many tables at depth for naming
 	astStrings          []string
+	inAssign            bool = false
+	assignParent        *SymbolEntry
+	assignParentScope   string
+	propagateUsed       map[*SymbolEntry][]*SymbolUsage = make(map[*SymbolEntry][]*SymbolUsage)
+	// used for re-init before use in case self used (earlier deps no longer unused!)
+	dependencyArtifact []*SymbolUsage
 )
+
+type SymbolUsage struct {
+	symbol *SymbolEntry
+	scope  string
+	line   int
+	pos    int
+}
 
 func populationExists(candidate int) bool {
 	_, exists := scopePopulation[candidate]
@@ -296,10 +309,7 @@ func scopeTypeCheck(node *Node) {
 						symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
 					warnCount++
 				}
-
-				symbol.beenUsed = true
-				Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
-					symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
+				useSymbol(symbol, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos)
 			}
 		}
 
@@ -430,14 +440,30 @@ func getNodeType(node *Node, examineChildren bool, markUsed bool) string {
 
 			if markUsed {
 				if !symbol.isInit {
-					Warn(fmt.Sprintf("Usage of uninitialized symbol [ %s ] in scope [ %s ] at (%d:%d)",
+					Warn(fmt.Sprintf("Usage of uninitialized symbol [ %s ] in scope [ %s ] at (%d:%d). Default value will be inferred based on type!",
 						symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
 					warnCount++
 				}
 
-				symbol.beenUsed = true
-				Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
-					symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
+				// part of an assignment, its usage depends on usage of var its being used to assign
+				if inAssign {
+					//
+					if symbol == assignParent {
+						Debug(fmt.Sprintf("Reinstated dependency artifacts on symbol [ %s ] in scope [ %s ] at (%d:%d) due to self-assignment",
+							assignParent.name, assignParentScope, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
+						propagateUsed[assignParent] = append(propagateUsed[assignParent],
+							dependencyArtifact...)
+
+					} else {
+						Debug(fmt.Sprintf("Created usage dependency on symbol [ %s ] in scope [ %s ] for symbol [ %s ] in scope [ %s ] at (%d:%d)",
+							assignParent.name, assignParentScope, symbol.name, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos), "SEMANTIC ANALYZER")
+						propagateUsed[assignParent] = append(propagateUsed[assignParent],
+							&SymbolUsage{symbol, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos})
+					}
+
+				} else {
+					useSymbol(symbol, curSymbolTable.scopeID, node.Token.location.line, node.Token.location.startPos)
+				}
 			}
 			return symbol.dataType
 
@@ -471,12 +497,21 @@ func analyzeVarDecl(node *Node) {
 }
 
 func analyzeAssign(node *Node) {
+	inAssign = true
 	var assigneeNode *Node = node.Children[0]
 	assignee, err := lookup(assigneeNode.Token.trueContent, node.Children[0].Token.location)
 	// assignee does not exist, we are done here
 	if err != nil {
 		return
 	}
+	assignParent = assignee
+	assignParentScope = curSymbolTable.scopeID
+	artifact, ok := propagateUsed[assignParent]
+	if ok { // store old decl from map in case it is needed
+		dependencyArtifact = artifact
+	}
+	propagateUsed[assignParent] = []*SymbolUsage{}
+
 	var assignTo *Node = node.Children[1]
 	var assignToType string = getNodeType(assignTo, true, true)
 
@@ -493,6 +528,7 @@ func analyzeAssign(node *Node) {
 				assignee.name, curSymbolTable.scopeID, assignee.position.line, assignee.position.startPos), "SEMANTIC ANALYZER")
 		}
 	}
+	inAssign = false
 }
 
 // easier bc no valid subexpressions that aren't add
@@ -530,6 +566,19 @@ func analyzeCompare(node *Node) {
 	} else {
 		Debug(fmt.Sprintf("Type checked %s", node.Type), "SEMANTIC ANALYZER")
 	}
+}
+
+// propagate usage to dependents
+func useSymbol(sym *SymbolEntry, scope string, line int, pos int) {
+	sym.beenUsed = true
+	Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
+		sym.name, scope, line, pos), "SEMANTIC ANALYZER")
+
+	for _, dependency := range propagateUsed[sym] {
+		useSymbol(dependency.symbol, dependency.scope, dependency.line, dependency.pos)
+	}
+
+	delete(propagateUsed, sym) // remove the entry
 }
 
 func GetAst() string {

@@ -24,7 +24,7 @@
 
     /*
         In this case f is used because h is used after f,
-        this is why propgation must happen after each variable use
+        this is why propagation must happen after each variable use
     */
     int f
     int g

@@ -131,6 +131,7 @@ func ResetAll() {
 	curSymbolTable = nil
 
 	errorCount = 0
+	inAssign = false
 	warnCount = 0
 	scopeDepth = 0
 	scopePopulation = make(map[int]int)
