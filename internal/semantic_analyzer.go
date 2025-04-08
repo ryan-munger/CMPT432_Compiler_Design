@@ -24,7 +24,6 @@ var (
 	assignParent        *SymbolEntry
 	assignParentScope   string
 	propagateUsed       map[*SymbolEntry][]*SymbolUsage = make(map[*SymbolEntry][]*SymbolUsage)
-	vistedUsages        map[*SymbolUsage]bool
 	// used for re-init before use in case self used (earlier deps no longer unused!)
 	dependencyArtifact []*SymbolUsage
 )

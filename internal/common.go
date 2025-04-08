@@ -132,6 +132,11 @@ func ResetAll() {
 
 	errorCount = 0
 	inAssign = false
+	assignParent = nil
+	assignParentScope = ""
+	propagateUsed = make(map[*SymbolEntry][]*SymbolUsage)
+	// used for re-init before use in case self used (earlier deps no longer unused!)
+	dependencyArtifact = nil
 	warnCount = 0
 	scopeDepth = 0
 	scopePopulation = make(map[int]int)
