@@ -600,8 +600,7 @@ func GetAst() string {
 	var astString string = ""
 	for i, ast := range astStrings {
 		astString += fmt.Sprintf("Program %d\n%s", i+1, strings.Repeat("-", 75))
-		if !hadError(i) || (errorMap[i] != "semantic" && errorMap[i] != "parser" && errorMap[i] != "lexer") {
-			println(ast)
+		if !hadError(i) || (errorMap[i] != "parser" && errorMap[i] != "lexer") {
 			astString += ast + "\n"
 		} else {
 			astString += fmt.Sprintf("\nNo AST generated due to %s error\n\n", errorMap[i])
