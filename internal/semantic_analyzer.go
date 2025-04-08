@@ -24,6 +24,7 @@ var (
 	assignParent        *SymbolEntry
 	assignParentScope   string
 	propagateUsed       map[*SymbolEntry][]*SymbolUsage = make(map[*SymbolEntry][]*SymbolUsage)
+	vistedUsages        map[*SymbolUsage]bool
 	// used for re-init before use in case self used (earlier deps no longer unused!)
 	dependencyArtifact []*SymbolUsage
 )
@@ -570,15 +571,26 @@ func analyzeCompare(node *Node) {
 
 // propagate usage to dependents
 func useSymbol(sym *SymbolEntry, scope string, line int, pos int) {
+	visited := make(map[*SymbolEntry]bool)
+	useSymbolHelper(sym, scope, line, pos, visited)
+}
+
+func useSymbolHelper(sym *SymbolEntry, scope string, line int, pos int, visited map[*SymbolEntry]bool) {
+	// If we've already visited this symbol, don't recurse
+	if visited[sym] {
+		return
+	}
+	visited[sym] = true
+
 	sym.beenUsed = true
 	Debug(fmt.Sprintf("Used entry [ %s ] in scope [ %s ] at (%d:%d)",
 		sym.name, scope, line, pos), "SEMANTIC ANALYZER")
 
 	for _, dependency := range propagateUsed[sym] {
-		useSymbol(dependency.symbol, dependency.scope, dependency.line, dependency.pos)
+		useSymbolHelper(dependency.symbol, dependency.scope, dependency.line, dependency.pos, visited)
 	}
 
-	delete(propagateUsed, sym) // remove the entry
+	delete(propagateUsed, sym)
 }
 
 func GetAst() string {

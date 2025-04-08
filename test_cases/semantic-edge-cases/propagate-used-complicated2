@@ -17,8 +17,8 @@
             f = e
             {
                 g = f
-                g = a
-                print(a)
+                h = g
+                print(h)
             }
         }
     }
