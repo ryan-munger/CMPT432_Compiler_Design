@@ -110,7 +110,6 @@ func GetLogOutput() string {
 // erase everything between compiles in webapp just in case
 func ResetAll() {
 	logBuffer = ""
-	memory = [256]byte{}
 	tokens = nil
 	liveTokenIdx = 0
 	liveToken = Token{}

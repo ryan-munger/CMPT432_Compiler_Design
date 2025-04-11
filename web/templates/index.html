@@ -262,14 +262,16 @@
                     <!-- Dropdown Sentence + Program Counter -->
                     <div class="flex items-center text-white gap-2">
                         <span>Showing</span>
-                        <select id="machineViewType" class="bg-gray-700 text-white border border-gray-600 rounded px-2 py-1 text-sm">
+                        <select id="machineViewType" onchange="updateMachineCodeBox()"
+                            class="bg-gray-700 text-white border border-gray-600 rounded px-2 py-1 text-sm">
                             <option>Machine Code</option>
-                            <option>Assembly</option>
+                            <option>Assembler</option>
                         </select>
                         <span>for program</span>
                         <div class="flex items-center gap-1">
                             <input id="programCounter" type="number" value="1" min="1"
-                                class="bg-gray-700 text-white text-center w-12 rounded border border-gray-600 py-1 px-1" />
+                                class="bg-gray-700 text-white text-center w-12 rounded border border-gray-600 py-1 px-1"
+                                oninput="updateMachineCodeBox()" />
                         </div>
                     </div>
 

@@ -5,6 +5,7 @@ import (
 	"gopiler/internal"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,8 +66,28 @@ func StartServer(expose bool) {
 	})
 
 	// for machine code display box
-	r.GET("/getMachineCode", func(c *gin.Context) {
-		machineCode := internal.GetMachineCode()
+	r.GET("/getMachineCode/:program", func(c *gin.Context) {
+		programStr := c.Param("program")
+		program, err := strconv.Atoi(programStr)
+		if err != nil {
+			c.String(http.StatusBadRequest, "Invalid program number")
+			return
+		}
+
+		machineCode := internal.GetMachineCode(program)
+		c.String(http.StatusOK, machineCode)
+	})
+
+	// for machine code display box
+	r.GET("/getAssembler/:program", func(c *gin.Context) {
+		programStr := c.Param("program")
+		program, err := strconv.Atoi(programStr)
+		if err != nil {
+			c.String(http.StatusBadRequest, "Invalid program number")
+			return
+		}
+
+		machineCode := internal.GetAssembler(program)
 		c.String(http.StatusOK, machineCode)
 	})
 

@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     // After successfully receiving the compilation output, send GET requests 
                     return Promise.all([
                         fetch("/getSymbolTables").then(response => response.json()),
-                        fetch("/getMachineCode").then(response => response.text()),
+                        fetch("/getMachineCode/0").then(response => response.text()),
                         fetch("/getCST").then(response => response.text()),
                         fetch("/getAST").then(response => response.text())
                     ]);
@@ -96,6 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .then(([symbolData, machineCodeData, cstData, astData]) => {
+                // reset back to default selection
                 document.getElementById('programCounter').value = 1;
                 document.getElementById('machineViewType').value = "Machine Code";
                 // for evil tailwind
@@ -163,6 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
             dropdownContent.classList.add('hidden');
         }
     });
+    
 });
 
 function copyMachineCode() {
@@ -180,5 +182,26 @@ function copyMachineCode() {
         })
         .catch(err => {
             console.error('Failed to copy: ', err);
+        });
+}
+
+function updateMachineCodeBox() {
+    const viewMode = document.getElementById('machineViewType').value;  // "Machine Code" or "Assembler"
+    const programNumber = document.getElementById('programCounter').value - 1; // backend index from 0 
+
+    let endpoint = '';
+    if (viewMode === 'Assembler') {
+        endpoint = `/getAssembler/${programNumber}`;
+    } else {
+        endpoint = `/getMachineCode/${programNumber}`;
+    }
+
+    fetch(endpoint)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('machineCode').textContent = data;
+        })
+        .catch(error => {
+            console.error('Error fetching machine code:', error);
         });
 }
