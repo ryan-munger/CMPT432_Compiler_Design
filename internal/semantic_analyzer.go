@@ -97,6 +97,7 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 			curSymbolTableTree.ToString()), "GOPILER", true)
 		CodeGeneration(curAst, curSymbolTableTree, programNum)
 	} else {
+		CreateFailedProgramVars(programNum, "semantic")
 		Fail(fmt.Sprintf("Semantic Analysis for program %d failed with %d error(s) and %d warning(s).",
 			programNum+1, errorCount, warnCount), "SEMANTIC ANALYZER")
 		errorMap[programNum] = "semantic"

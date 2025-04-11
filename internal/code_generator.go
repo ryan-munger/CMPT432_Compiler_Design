@@ -14,7 +14,7 @@ var (
 )
 
 func initMem(pNum int) {
-	for len(cstList) <= pNum {
+	for len(memList) <= pNum {
 		// new memory
 		var newMem [256]byte
 		memList = append(memList, &newMem)
@@ -68,8 +68,7 @@ func GetMachineCode(program int) string {
 	if program < 0 || program > len(memList)-1 {
 		return "Invalid program number"
 	} else if len(memList) == 0 || hadError(program) {
-		return fmt.Sprintf("Program %d\n%s\nNo code generated due to %s error\n\n",
-			program, strings.Repeat("-", 75), errorMap[0])
+		return fmt.Sprintf("No machine code generated due to %s error", errorMap[program])
 	}
 
 	var hexString []string
@@ -84,8 +83,7 @@ func GetAssembler(program int) string {
 	if program < 0 || program > len(asmList)-1 {
 		return "Invalid program number"
 	} else if len(memList) == 0 || hadError(program) {
-		return fmt.Sprintf("Program %d\n%s\nNo code generated due to %s error\n\n",
-			program, strings.Repeat("-", 75), errorMap[0])
+		return fmt.Sprintf("No assembler generated due to %s error", errorMap[program])
 	}
 
 	return asmList[program].String()

@@ -90,6 +90,7 @@ func Parse(tokenStream []Token, programNum int) {
 			cstList[programNum].drawTree()), "GOPILER", true)
 		SemanticAnalysis(cstList[programNum], programNum)
 	} else {
+		CreateFailedProgramVars(programNum, "parser")
 		Fail("Parsing aborted due to an error.", "PARSER")
 		errorMap[programNum] = "parser"
 		cstList[programNum] = TokenTree{} // free memory from the CST since it cannot be used

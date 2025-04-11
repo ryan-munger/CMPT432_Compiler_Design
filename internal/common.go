@@ -143,3 +143,17 @@ func ResetAll() {
 
 	printTreeBuffer = ""
 }
+
+func CreateFailedProgramVars(pNum int, failPoint string) {
+	switch failPoint {
+	case "lexer":
+		startCst(pNum)
+		fallthrough
+	case "parser":
+		initAst(pNum)
+		astStrings = append(astStrings, "Error")
+		fallthrough
+	case "semantic":
+		initMem(pNum)
+	}
+}

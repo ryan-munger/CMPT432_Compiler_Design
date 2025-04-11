@@ -69,6 +69,7 @@ func passFailProgram(programNum int, errorCount int, warningCount int, tokenStre
 			programNum+1, warningCount, len(tokenStream[programNum])), "LEXER")
 		Parse(tokenStream[programNum], programNum)
 	} else {
+		CreateFailedProgramVars(programNum, "lexer")
 		Fail(fmt.Sprintf("Lexer failed with %d error(s) and %d warning(s).", errorCount, warningCount), "LEXER")
 		Info(fmt.Sprintf("Compilation of program %d aborted due to lexer error.", programNum+1), "GOPILER", false)
 		tokenStream[programNum] = []Token{} // release memory as tokens will never be used
