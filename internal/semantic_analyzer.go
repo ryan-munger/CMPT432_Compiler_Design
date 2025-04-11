@@ -97,8 +97,8 @@ func SemanticAnalysis(cst TokenTree, programNum int) {
 			curSymbolTableTree.ToString()), "GOPILER", true)
 		CodeGeneration(curAst, curSymbolTableTree, programNum)
 	} else {
-		Fail(fmt.Sprintf("Semantic Analysis failed with %d error(s) and %d warning(s).",
-			errorCount, warnCount), "SEMANTIC ANALYZER")
+		Fail(fmt.Sprintf("Semantic Analysis for program %d failed with %d error(s) and %d warning(s).",
+			programNum+1, errorCount, warnCount), "SEMANTIC ANALYZER")
 		errorMap[programNum] = "semantic"
 		astList[programNum] = TokenTree{}                    // free memory from the AST since it cannot be used
 		symbolTableTreeList[programNum] = &SymbolTableTree{} // free this up too
