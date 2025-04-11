@@ -96,6 +96,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .then(([symbolData, machineCodeData, cstData, astData]) => {
+                document.getElementById('programCounter').value = 1;
+                document.getElementById('machineViewType').value = "Machine Code";
                 // for evil tailwind
                 symbolData = symbolData.replace(/<table/g, '<table class="w-full border border-gray-500"');
                 symbolData = symbolData.replace(/<th/g, '<th class="border border-gray-500 px-2 py-1 bg-gray-600 text-white"');
