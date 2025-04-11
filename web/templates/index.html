@@ -245,10 +245,11 @@
             <!-- Machine Code Section -->
             <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                 <div class="flex justify-between items-center mb-2">
+                    <!-- Title + Copy Button -->
                     <div class="flex items-center">
                         <h2 class="text-xl font-semibold text-white">Machine Code</h2>
                         <button id="copyButton" onclick="copyMachineCode()"
-                            class="ml-2 bg-gray-600 hover:bg-gray-500 text-white p-1 rounded-lg"
+                            class="ml-2 bg-gray-700 hover:bg-gray-600 text-white p-1 rounded-lg"
                             title="Copy to clipboard">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -257,17 +258,37 @@
                             </svg>
                         </button>
                     </div>
+
+                    <!-- Dropdown Sentence + Program Counter -->
+                    <div class="flex items-center text-white gap-2">
+                        <span>Showing</span>
+                        <select class="bg-gray-700 text-white border border-gray-600 rounded px-2 py-1 text-sm">
+                            <option>Machine Code</option>
+                            <option>Assembly</option>
+                        </select>
+                        <span>for program</span>
+                        <div class="flex items-center gap-1">
+                            <input id="programCounter" type="number" value="1" min="1"
+                                class="bg-gray-700 text-white text-center w-12 rounded border border-gray-600 py-1 px-1" />
+                        </div>
+                    </div>
+
+                    <!-- Launch OS Button -->
                     <button id="launchOSButton"
                         class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm"
                         onclick="window.open('https://www.labouseur.com/commondocs/operating-systems/CyberCore/index.html', '_blank');">
                         Launch OS
                     </button>
                 </div>
+
+                <!-- Machine Code Display Box -->
                 <div class="bg-gray-700 rounded-lg border border-gray-600 h-[15rem]">
-                    <pre id="machineCode" class="w-full h-full p-3 text-green-400 text-base overflow-auto"
+                    <pre id="machineCode" onclick="copyMachineCode()"
+                        class="w-full h-full p-3 text-green-400 text-base overflow-auto"
                         style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>
+
         </div>
 
         <!-- Tree Boxes -->
