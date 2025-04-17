@@ -74,7 +74,7 @@ func StartServer(expose bool) {
 			return
 		}
 
-		machineCode := internal.GetMachineCode(program)
+		machineCode := internal.GetMachineCode(program, false)
 		c.String(http.StatusOK, machineCode)
 	})
 
