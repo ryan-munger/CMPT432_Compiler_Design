@@ -16,7 +16,7 @@ var (
 	curScope     *SymbolTable
 	genErrors    int = 0
 	endStackPtr  int = 0
-	topHeapPtr   int = 255
+	topHeapPtr   int = 256
 )
 
 type placeholder struct {
@@ -192,6 +192,19 @@ func generatePrint(node *Node) {
 			var b byte = strIntToByte(toPrint.Token.trueContent)
 			addBytes([]byte{0xA0, b})    // load Y with const
 			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+		} else if toPrint.Token.tType == Identifier {
+			var sym *SymbolEntry = lookupSymbol(toPrint.Token.trueContent)
+			if sym.dataType == "int" || sym.dataType == "boolean" {
+				addPlaceholderLocation(node.Children[0], curBytePtr+1)
+				addBytes([]byte{0xAC, 0x00, 0x00}) // load Y from mem
+				addBytes([]byte{0xA2, 0x01})       // load X with 1 for Y printing
+			} else { // string ID
+
+			}
+		} else if toPrint.Token.content == "STRING" {
+			addToHeap(toPrint.Token.trueContent)
+			addBytes([]byte{0xA0, byte(topHeapPtr)}) // load Y with heap addr
+			addBytes([]byte{0xA2, 0x02})             // load X with 2 for addr Y printing
 		}
 	}
 	addBytes([]byte{0xFF}) // print sys call
@@ -208,6 +221,16 @@ func backpatch() {
 			curMem[loc] = p.realAddr[1]
 			curMem[loc+1] = p.realAddr[0]
 		}
+	}
+}
+
+func addToHeap(str string) {
+	println(topHeapPtr)
+	topHeapPtr--
+	curMem[topHeapPtr] = 0x00 // 0x00 terminated str
+	topHeapPtr -= len(str)    // fills bottom up
+	for i, char := range str {
+		curMem[topHeapPtr+i] = byte(char)
 	}
 }
 
