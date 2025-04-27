@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -9,11 +10,13 @@ var (
 	memList      []*[256]byte
 	curMem       *[256]byte // Array of 256 bytes, all init to 0x00
 	asmList      []*strings.Builder
-	curAsm       *strings.Builder // constantly adding to it
-	curBytePtr   int              = 0
+	curAsm       *strings.Builder
+	curBytePtr   int = 0
 	placeholders []*placeholder
 	curScope     *SymbolTable
 	genErrors    int = 0
+	endStackPtr  int = 0
+	topHeapPtr   int = 255
 )
 
 type placeholder struct {
@@ -78,6 +81,8 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	initMem(pNum)
 	curScope = symbolTableTree.rootTable
 	generateCode(ast.rootNode)
+	addBytes([]byte{0x00}) // break
+	backpatch()
 
 	if genErrors == 0 {
 		Pass(fmt.Sprintf("Successfully generated code and assembler for program %d with 0 errors.",
@@ -155,11 +160,42 @@ func generateAssign(node *Node) {
 }
 
 func generateExpr(node *Node) {
+	switch node.Type {
+	case "Token":
+		if node.Token.tType == Digit {
+			num, _ := strconv.Atoi(node.Token.trueContent)
+			var b byte = byte(num)
+			addBytes([]byte{0xA9, b})
+		} else if node.Token.tType == Identifier {
 
+		} else { // string, heap
+
+		}
+
+	case "<Add>":
+
+	case "<Inequality>":
+
+	case "<Equality>":
+	}
 }
 
 func generatePrint(node *Node) {
 
+}
+
+func backpatch() {
+	endStackPtr = curBytePtr
+	for _, p := range placeholders {
+		p.realAddr = [2]byte{0x00, byte(endStackPtr)}
+		endStackPtr += 2
+
+		for _, loc := range p.locations {
+			// little endian
+			curMem[loc] = p.realAddr[1]
+			curMem[loc+1] = p.realAddr[0]
+		}
+	}
 }
 
 func GetMachineCode(program int, eightBreaks bool) string {
