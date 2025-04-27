@@ -68,6 +68,11 @@ func initMem(pNum int) {
 	}
 }
 
+func strIntToByte(strInt string) byte {
+	num, _ := strconv.Atoi(strInt)
+	return byte(num)
+}
+
 func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -163,8 +168,7 @@ func generateExpr(node *Node) {
 	switch node.Type {
 	case "Token":
 		if node.Token.tType == Digit {
-			num, _ := strconv.Atoi(node.Token.trueContent)
-			var b byte = byte(num)
+			var b byte = strIntToByte(node.Token.trueContent)
 			addBytes([]byte{0xA9, b})
 		} else if node.Token.tType == Identifier {
 
@@ -181,7 +185,16 @@ func generateExpr(node *Node) {
 }
 
 func generatePrint(node *Node) {
-
+	var toPrint = node.Children[0]
+	switch toPrint.Type {
+	case "Token":
+		if toPrint.Token.tType == Digit {
+			var b byte = strIntToByte(toPrint.Token.trueContent)
+			addBytes([]byte{0xA0, b})    // load Y with const
+			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+		}
+	}
+	addBytes([]byte{0xFF}) // print sys call
 }
 
 func backpatch() {

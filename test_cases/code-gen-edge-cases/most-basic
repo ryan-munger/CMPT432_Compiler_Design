@@ -1,5 +1,1 @@
-{
-    int i
-    i = 5
-    print(i)
-}$
+{ print(1) }$
