@@ -140,18 +140,14 @@ func addBytes(newMem []byte) {
 
 // type, id
 func generateVarDecl(node *Node) {
-	if node.Children[0].Token.content == "S_TYPE" {
-		// heap allocation - TODO
-	} else { // int or bool - init to 0
-		// load 0 to accum for init
-		addBytes([]byte{0xA9, 0x00})
+	// load 0 to accum for init
+	addBytes([]byte{0xA9, 0x00})
 
-		// store init value to address (temp 00s for now)
-		var temp = newPlaceholder(node.Children[1])
-		temp.locations = append(temp.locations, curBytePtr+1)
-		placeholders = append(placeholders, temp)
-		addBytes([]byte{0x8D, 0x00, 0x00})
-	}
+	// store init value to address (temp 00s for now)
+	var temp = newPlaceholder(node.Children[1])
+	temp.locations = append(temp.locations, curBytePtr+1)
+	placeholders = append(placeholders, temp)
+	addBytes([]byte{0x8D, 0x00, 0x00})
 }
 
 // id, expr
@@ -173,7 +169,9 @@ func generateExpr(node *Node) {
 		} else if node.Token.tType == Identifier {
 
 		} else { // string, heap
-
+			// we store the heap addr in a var
+			addToHeap(node.Token.trueContent)
+			addBytes([]byte{0xA9, byte(topHeapPtr)})
 		}
 
 	case "<Add>":
@@ -199,7 +197,9 @@ func generatePrint(node *Node) {
 				addBytes([]byte{0xAC, 0x00, 0x00}) // load Y from mem
 				addBytes([]byte{0xA2, 0x01})       // load X with 1 for Y printing
 			} else { // string ID
-
+				addPlaceholderLocation(node.Children[0], curBytePtr+1)
+				addBytes([]byte{0xAC, 0x00, 0x00}) // load Y w heap addr
+				addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
 			}
 		} else if toPrint.Token.content == "STRING" {
 			addToHeap(toPrint.Token.trueContent)

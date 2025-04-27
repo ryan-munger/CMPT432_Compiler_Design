@@ -1,0 +1,5 @@
+{
+    string r 
+    r = "ryan" 
+    print(r)
+} $
