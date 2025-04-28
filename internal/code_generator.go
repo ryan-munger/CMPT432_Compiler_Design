@@ -7,16 +7,17 @@ import (
 )
 
 var (
-	memList      []*[256]byte
-	curMem       *[256]byte // Array of 256 bytes, all init to 0x00
-	asmList      []*strings.Builder
-	curAsm       *strings.Builder
-	curBytePtr   int = 0
-	placeholders []*placeholder
-	curScope     *SymbolTable
-	genErrors    int = 0
-	endStackPtr  int = 0
-	topHeapPtr   int = 256
+	memList       []*[256]byte
+	curMem        *[256]byte // Array of 256 bytes, all init to 0x00
+	asmList       []*strings.Builder
+	curAsm        *strings.Builder
+	curBytePtr    int = 0
+	placeholders  []*placeholder
+	curScope      *SymbolTable
+	genErrors     int            = 0
+	endStackPtr   int            = 0
+	topHeapPtr    int            = 256
+	storedStrings map[string]int = make(map[string]int)
 )
 
 type placeholder struct {
@@ -140,14 +141,19 @@ func addBytes(newMem []byte) {
 
 // type, id
 func generateVarDecl(node *Node) {
-	// load 0 to accum for init
-	addBytes([]byte{0xA9, 0x00})
-
-	// store init value to address (temp 00s for now)
-	var temp = newPlaceholder(node.Children[1])
-	temp.locations = append(temp.locations, curBytePtr+1)
+	// placeholder for var
+	var temp *placeholder = newPlaceholder(node.Children[1])
 	placeholders = append(placeholders, temp)
-	addBytes([]byte{0x8D, 0x00, 0x00})
+
+	// we initialize bools and ints to 0
+	if node.Children[0].Type == "I_TYPE" || node.Children[0].Type == "B_TYPE" {
+		// load 0 to accum for init
+		addBytes([]byte{0xA9, 0x00})
+
+		// store init value to address (temp 00s for now)
+		temp.locations = append(temp.locations, curBytePtr+1)
+		addBytes([]byte{0x8D, 0x00, 0x00})
+	}
 }
 
 // id, expr
@@ -170,8 +176,8 @@ func generateExpr(node *Node) {
 
 		} else { // string, heap
 			// we store the heap addr in a var
-			addToHeap(node.Token.trueContent)
-			addBytes([]byte{0xA9, byte(topHeapPtr)})
+			var strHeapLoc byte = addToHeap(node.Token.trueContent)
+			addBytes([]byte{0xA9, strHeapLoc})
 		}
 
 	case "<Add>":
@@ -202,9 +208,9 @@ func generatePrint(node *Node) {
 				addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
 			}
 		} else if toPrint.Token.content == "STRING" {
-			addToHeap(toPrint.Token.trueContent)
-			addBytes([]byte{0xA0, byte(topHeapPtr)}) // load Y with heap addr
-			addBytes([]byte{0xA2, 0x02})             // load X with 2 for addr Y printing
+			var strHeapLoc byte = addToHeap(toPrint.Token.trueContent)
+			addBytes([]byte{0xA0, strHeapLoc}) // load Y with heap addr
+			addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
 		}
 	}
 	addBytes([]byte{0xFF}) // print sys call
@@ -224,14 +230,21 @@ func backpatch() {
 	}
 }
 
-func addToHeap(str string) {
-	println(topHeapPtr)
+func addToHeap(str string) byte {
+	loc, exists := storedStrings[str]
+	// if we already have it, just say where
+	if exists {
+		return byte(loc)
+	}
+
 	topHeapPtr--
 	curMem[topHeapPtr] = 0x00 // 0x00 terminated str
 	topHeapPtr -= len(str)    // fills bottom up
 	for i, char := range str {
 		curMem[topHeapPtr+i] = byte(char)
 	}
+	storedStrings[str] = topHeapPtr // remember we have it stored
+	return byte(topHeapPtr)
 }
 
 func GetMachineCode(program int, eightBreaks bool) string {

@@ -1,0 +1,9 @@
+{
+  string a
+  string b
+  a = "hi"
+  b = "hi"
+  print(b)
+  b = "hello"
+  print(b)
+}$
