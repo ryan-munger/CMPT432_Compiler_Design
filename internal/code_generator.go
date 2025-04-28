@@ -184,10 +184,17 @@ func generateExpr(node *Node) {
 		} else if node.Token.tType == Identifier {
 			addPlaceholderLocation(node, curBytePtr+1)
 			addBytes([]byte{0xAD, 0x00, 0x00}) // load accum from mem
-		} else { // string, heap
+		} else if node.Token.content == "STRING" {
+			// string, heap
 			// we store the heap addr in a var
 			var strHeapLoc byte = addToHeap(node.Token.trueContent)
 			addBytes([]byte{0xA9, strHeapLoc})
+		} else if node.Token.content == "KEYW_TRUE" {
+			addBytes([]byte{0xA9, 0x01}) // load true to accum
+		} else if node.Token.content == "KEYW_FALSE" {
+			addBytes([]byte{0xA9, 0x00}) // load false to accum
+		} else {
+			println("How is this possible" + node.Token.content)
 		}
 
 	case "<Addition>":
@@ -271,6 +278,12 @@ func generatePrint(node *Node) {
 			var strHeapLoc byte = addToHeap(toPrint.Token.trueContent)
 			addBytes([]byte{0xA0, strHeapLoc}) // load Y with heap addr
 			addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
+		} else if toPrint.Token.content == "KEYW_TRUE" {
+			addBytes([]byte{0xA0, 0x01}) // load Y with true
+			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+		} else if toPrint.Token.content == "KEYW_FALSE" {
+			addBytes([]byte{0xA0, 0x00}) // load Y with false
+			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
 		}
 
 	case "<Addition>":

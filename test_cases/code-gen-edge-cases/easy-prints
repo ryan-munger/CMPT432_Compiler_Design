@@ -1,0 +1,5 @@
+{
+    print("meow")
+    print(false)
+    print(3)
+}$
