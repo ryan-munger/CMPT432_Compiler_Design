@@ -180,12 +180,61 @@ func generateExpr(node *Node) {
 			addBytes([]byte{0xA9, strHeapLoc})
 		}
 
-	case "<Add>":
+	case "<Addition>":
+		generateAdd(node)
 
 	case "<Inequality>":
 
 	case "<Equality>":
 	}
+}
+
+// digit, digit/add
+func generateAdd(node *Node) {
+	var digAddParams []*Token
+	var idAddParams []*Node
+	var curAddParent *Node = node
+	var param1 *Node
+	var param2 *Node
+
+	// collect all things to add
+	for { // loop until no more nested add
+		param1 = curAddParent.Children[0]
+		param2 = curAddParent.Children[1]
+		// param1 is always a digit
+		digAddParams = append(digAddParams, param1.Token)
+
+		if param2.Type == "Token" { // we are done moving down
+			if param2.Token.tType == Digit {
+				digAddParams = append(digAddParams, param2.Token)
+			} else { // id
+				idAddParams = append(idAddParams, param2)
+			}
+			break
+		}
+		// nested add
+		curAddParent = param2
+	}
+
+	// collapse all static digits down
+	// I won't constrain it to be below 127 (largest due to 2's comp)
+	// If I separated it, adding 120 and 120 instead of storing 240 doesn't help anything
+	var digitTotal int
+	for _, token := range digAddParams {
+		digVal, _ := strconv.Atoi(token.trueContent)
+		digitTotal += digVal
+	}
+
+	// load collapsed digits to accum for adding
+	addBytes([]byte{0xA9, byte(digitTotal)})
+	if len(idAddParams) != 0 { // if we don't have IDs no adding needed
+		for _, id := range idAddParams {
+			// add them up!
+			addPlaceholderLocation(id, curBytePtr+1)
+			addBytes([]byte{0x6D, 0x00, 0x00})
+		}
+	}
+	// result is in accum when done
 }
 
 func generatePrint(node *Node) {
@@ -212,6 +261,19 @@ func generatePrint(node *Node) {
 			addBytes([]byte{0xA0, strHeapLoc}) // load Y with heap addr
 			addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
 		}
+
+	case "<Addition>":
+		generateAdd(node.Children[0]) // result is in accum
+		// we need to store it, no symbol ref to it though
+		var headlessPlaceholder *placeholder = &placeholder{[]int{}, nil, [2]byte{}}
+		placeholders = append(placeholders, headlessPlaceholder)
+
+		headlessPlaceholder.locations = append(headlessPlaceholder.locations, curBytePtr+1)
+		addBytes([]byte{0x8D, 0x00, 0x00}) // store add result
+
+		headlessPlaceholder.locations = append(headlessPlaceholder.locations, curBytePtr+1)
+		addBytes([]byte{0xAC, 0x00, 0x00}) // load stored result to Y
+		addBytes([]byte{0xA2, 0x01})       // load X with 1 for Y printing
 	}
 	addBytes([]byte{0xFF}) // print sys call
 }
