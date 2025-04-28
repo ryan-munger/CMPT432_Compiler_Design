@@ -159,7 +159,7 @@ func generateVarDecl(node *Node) {
 // id, expr
 func generateAssign(node *Node) {
 	// edge case for incrementing an ID by 1
-	if node.Children[1].Type == "Addition" && node.Children[1].Children[0].Token.trueContent == "1" &&
+	if node.Children[1].Type == "<Addition>" && node.Children[1].Children[0].Token.trueContent == "1" &&
 		node.Children[1].Children[1].Type == "Token" && node.Children[1].Children[1].Token.tType == Identifier {
 
 		addPlaceholderLocation(node.Children[1].Children[1], curBytePtr+1)
@@ -167,11 +167,10 @@ func generateAssign(node *Node) {
 	} else {
 		// load up whatever expr it was
 		generateExpr(node.Children[1])
+		// store it
+		addPlaceholderLocation(node.Children[0], curBytePtr+1)
+		addBytes([]byte{0x8D, 0x00, 0x00})
 	}
-
-	// store it
-	addPlaceholderLocation(node.Children[0], curBytePtr+1)
-	addBytes([]byte{0x8D, 0x00, 0x00})
 }
 
 func generateExpr(node *Node) {
@@ -181,7 +180,8 @@ func generateExpr(node *Node) {
 			var b byte = strIntToByte(node.Token.trueContent)
 			addBytes([]byte{0xA9, b})
 		} else if node.Token.tType == Identifier {
-
+			addPlaceholderLocation(node, curBytePtr+1)
+			addBytes([]byte{0xAD, 0x00, 0x00}) // load accum from mem
 		} else { // string, heap
 			// we store the heap addr in a var
 			var strHeapLoc byte = addToHeap(node.Token.trueContent)
