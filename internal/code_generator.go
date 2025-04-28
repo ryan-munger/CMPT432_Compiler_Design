@@ -124,6 +124,8 @@ func generateCode(node *Node) {
 		generateAssign(node)
 	case "<PrintStatement>":
 		generatePrint(node)
+	case "<IfStatement>", "<WhileStatement>":
+		generateIfWhile(node)
 	default:
 		// the children of the node are important even if the node itself is not
 		for _, child := range node.Children {
@@ -192,6 +194,7 @@ func generateExpr(node *Node) {
 		generateAdd(node)
 
 	case "<Inequality>":
+		generateComparison(node)
 
 	case "<Equality>":
 	}
@@ -298,6 +301,35 @@ func backpatch() {
 			curMem[loc+1] = p.realAddr[0]
 		}
 	}
+}
+
+func generateIfWhile(node *Node) {
+	var whileReturn int = curBytePtr
+
+	var condition *Node = node.Children[0]
+	var block *Node = node.Children[1]
+	generateComparison(condition)
+
+	// prep jump
+	var curBytePos int = curBytePtr
+	var jumpPlacehold int = curBytePtr + 1
+	addBytes([]byte{0xD0, 0x00})
+
+	generateCode(block)
+	var afterBytePos int = curBytePtr
+
+	// calculate jump and backfill
+	curMem[jumpPlacehold] = byte(afterBytePos - curBytePos)
+
+	if node.Type == "<WhileStatement>" {
+		var jumpDist byte = byte(afterBytePos - whileReturn)
+		var jumpVal byte = 0xFF - jumpDist // 2's comp
+		addBytes([]byte{0xD0, jumpVal})
+	}
+}
+
+func generateComparison(node *Node) {
+
 }
 
 func addToHeap(str string) byte {
