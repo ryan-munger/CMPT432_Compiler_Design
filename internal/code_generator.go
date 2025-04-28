@@ -158,8 +158,16 @@ func generateVarDecl(node *Node) {
 
 // id, expr
 func generateAssign(node *Node) {
-	// load up whatever expr it was
-	generateExpr(node.Children[1])
+	// edge case for incrementing an ID by 1
+	if node.Children[1].Type == "Addition" && node.Children[1].Children[0].Token.trueContent == "1" &&
+		node.Children[1].Children[1].Type == "Token" && node.Children[1].Children[1].Token.tType == Identifier {
+
+		addPlaceholderLocation(node.Children[1].Children[1], curBytePtr+1)
+		addBytes([]byte{0xEE, 0x00, 0x00}) // increment it!
+	} else {
+		// load up whatever expr it was
+		generateExpr(node.Children[1])
+	}
 
 	// store it
 	addPlaceholderLocation(node.Children[0], curBytePtr+1)

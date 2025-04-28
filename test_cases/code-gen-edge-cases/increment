@@ -1,0 +1,12 @@
+{
+  int a
+  a = 2
+  a = 1 + a     /* increments */
+  print(a)
+  
+  print(1 + a) /* don't */
+  print(a)
+
+  a = 1 + 1 + a /* can increment twice or just add */
+  print(a)
+}
