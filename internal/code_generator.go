@@ -9,9 +9,9 @@ import (
 var (
 	memList       []*[256]byte
 	curMem        *[256]byte // Array of 256 bytes, all init to 0x00
-	asmList       []*strings.Builder
-	curAsm        *strings.Builder
-	curBytePtr    int = 0
+	asmList       [][]byte
+	curAsm        []byte // so we can update it from indices later
+	curBytePtr    int    = 0
 	placeholders  []*placeholder
 	curScope      *SymbolTable
 	genErrors     int            = 0
@@ -21,22 +21,24 @@ var (
 )
 
 type placeholder struct {
-	locations []int        // where it appears in code
-	symbol    *SymbolEntry // so we know which var its for - scope dependent
-	realAddr  [2]byte      // actual location after backpatching
+	locations    []int // where it appears in code
+	asmLocations []int
+	symbol       *SymbolEntry // so we know which var its for - scope dependent
+	realAddr     [2]byte      // actual location after backpatching
 }
 
 func newPlaceholder(node *Node) *placeholder {
 	var symbol = lookupSymbol(node.Token.trueContent)
-	return &placeholder{locations: []int{}, symbol: symbol, realAddr: [2]byte{}}
+	return &placeholder{locations: []int{}, asmLocations: []int{}, symbol: symbol, realAddr: [2]byte{}}
 }
 
 // takes in an ID
-func addPlaceholderLocation(node *Node, loc int) {
+func addPlaceholderLocation(node *Node, loc int, asmLoc int) {
 	var symbol *SymbolEntry = lookupSymbol(node.Token.trueContent)
 	for _, p := range placeholders {
 		if p.symbol == symbol {
 			p.locations = append(p.locations, loc)
+			p.asmLocations = append(p.asmLocations, asmLoc)
 		}
 	}
 }
@@ -62,10 +64,9 @@ func initMem(pNum int) {
 		curMem = &newMem
 
 		// new assembler
-		var newAsm strings.Builder
-		newAsm.WriteString("6502 Assembler:\n")
-		asmList = append(asmList, &newAsm)
-		curAsm = &newAsm
+		var newAsm []byte
+		newAsm = append(newAsm, "6502 Assembler:\n"...)
+		curAsm = newAsm
 	}
 }
 
@@ -88,6 +89,7 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	curScope = symbolTableTree.rootTable
 	generateCode(ast.rootNode)
 	addBytes([]byte{0x00}) // break
+	addAsm("BRK")
 	backpatch()
 
 	if genErrors == 0 {
@@ -101,7 +103,7 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 		Fail(fmt.Sprintf("Code Generation for program %d failed with %d error(s).",
 			pNum+1, errorCount), "CODE GENERATOR")
 		errorMap[pNum] = "code generation"
-		asmList[pNum] = &strings.Builder{}
+		asmList[pNum] = []byte{}
 		Info(fmt.Sprintf("Compilation of program %d aborted due to code generation error(s).",
 			pNum+1), "GOPILER", false)
 	}
@@ -141,6 +143,10 @@ func addBytes(newMem []byte) {
 	}
 }
 
+func addAsm(newAsm string) {
+	curAsm = append(curAsm, []byte(newAsm+" \n")...)
+}
+
 // type, id
 func generateVarDecl(node *Node) {
 	// placeholder for var
@@ -151,10 +157,13 @@ func generateVarDecl(node *Node) {
 	if node.Children[0].Type == "I_TYPE" || node.Children[0].Type == "B_TYPE" {
 		// load 0 to accum for init
 		addBytes([]byte{0xA9, 0x00})
+		addAsm("LDA #$00")
 
 		// store init value to address (temp 00s for now)
 		temp.locations = append(temp.locations, curBytePtr+1)
 		addBytes([]byte{0x8D, 0x00, 0x00})
+		temp.asmLocations = append(temp.asmLocations, len(curAsm)+4)
+		addAsm("STA _TEMP")
 	}
 }
 
@@ -164,14 +173,16 @@ func generateAssign(node *Node) {
 	if node.Children[1].Type == "<Addition>" && node.Children[1].Children[0].Token.trueContent == "1" &&
 		node.Children[1].Children[1].Type == "Token" && node.Children[1].Children[1].Token.tType == Identifier {
 
-		addPlaceholderLocation(node.Children[1].Children[1], curBytePtr+1)
+		addPlaceholderLocation(node.Children[1].Children[1], curBytePtr+1, len(curAsm)+4)
 		addBytes([]byte{0xEE, 0x00, 0x00}) // increment it!
+		addAsm("INC _TEMP")
 	} else {
 		// load up whatever expr it was
 		generateExpr(node.Children[1])
 		// store it
-		addPlaceholderLocation(node.Children[0], curBytePtr+1)
+		addPlaceholderLocation(node.Children[0], curBytePtr+1, len(curAsm)+4)
 		addBytes([]byte{0x8D, 0x00, 0x00})
+		addAsm("STA _TEMP")
 	}
 }
 
@@ -181,18 +192,23 @@ func generateExpr(node *Node) {
 		if node.Token.tType == Digit {
 			var b byte = strIntToByte(node.Token.trueContent)
 			addBytes([]byte{0xA9, b})
+			addAsm(fmt.Sprintf("LDA #$%02X", b))
 		} else if node.Token.tType == Identifier {
-			addPlaceholderLocation(node, curBytePtr+1)
+			addPlaceholderLocation(node, curBytePtr+1, len(curAsm)+4)
 			addBytes([]byte{0xAD, 0x00, 0x00}) // load accum from mem
+			addAsm("LDA _TEMP")
 		} else if node.Token.content == "STRING" {
 			// string, heap
 			// we store the heap addr in a var
 			var strHeapLoc byte = addToHeap(node.Token.trueContent)
 			addBytes([]byte{0xA9, strHeapLoc})
+			addAsm(fmt.Sprintf("LDA $#%02X", strHeapLoc))
 		} else if node.Token.content == "KEYW_TRUE" {
 			addBytes([]byte{0xA9, 0x01}) // load true to accum
+			addAsm("LDA #$01")
 		} else if node.Token.content == "KEYW_FALSE" {
 			addBytes([]byte{0xA9, 0x00}) // load false to accum
+			addAsm("LDA #$00")
 		} else {
 			println("How is this possible" + node.Token.content)
 		}
@@ -245,11 +261,13 @@ func generateAdd(node *Node) {
 
 	// load collapsed digits to accum for adding
 	addBytes([]byte{0xA9, byte(digitTotal)})
+	addAsm(fmt.Sprintf("LDA #$%02X", byte(digitTotal)))
 	if len(idAddParams) != 0 { // if we don't have IDs no adding needed
 		for _, id := range idAddParams {
 			// add them up!
-			addPlaceholderLocation(id, curBytePtr+1)
+			addPlaceholderLocation(id, curBytePtr+1, len(curAsm)+4)
 			addBytes([]byte{0x6D, 0x00, 0x00})
+			addAsm("ADC _TEMP")
 		}
 	}
 	// result is in accum when done
@@ -261,45 +279,67 @@ func generatePrint(node *Node) {
 	case "Token":
 		if toPrint.Token.tType == Digit {
 			var b byte = strIntToByte(toPrint.Token.trueContent)
-			addBytes([]byte{0xA0, b})    // load Y with const
+			addBytes([]byte{0xA0, b}) // load Y with const
+			addAsm(fmt.Sprintf("LDY #$%02X", b))
 			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+			addAsm("LDX #$01")
+
 		} else if toPrint.Token.tType == Identifier {
 			var sym *SymbolEntry = lookupSymbol(toPrint.Token.trueContent)
 			if sym.dataType == "int" || sym.dataType == "boolean" {
-				addPlaceholderLocation(node.Children[0], curBytePtr+1)
+				addPlaceholderLocation(node.Children[0], curBytePtr+1, len(curAsm)+4)
 				addBytes([]byte{0xAC, 0x00, 0x00}) // load Y from mem
-				addBytes([]byte{0xA2, 0x01})       // load X with 1 for Y printing
+				addAsm("LDY _TEMP")
+				addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+				addAsm("LDX #$01")
+
 			} else { // string ID
-				addPlaceholderLocation(node.Children[0], curBytePtr+1)
+				addPlaceholderLocation(node.Children[0], curBytePtr+1, len(curAsm)+4)
 				addBytes([]byte{0xAC, 0x00, 0x00}) // load Y w heap addr
-				addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
+				addAsm("LDY _TEMP")
+				addBytes([]byte{0xA2, 0x02}) // load X with 2 for addr Y printing
+				addAsm("LDX #$02")
 			}
 		} else if toPrint.Token.content == "STRING" {
 			var strHeapLoc byte = addToHeap(toPrint.Token.trueContent)
 			addBytes([]byte{0xA0, strHeapLoc}) // load Y with heap addr
-			addBytes([]byte{0xA2, 0x02})       // load X with 2 for addr Y printing
+			addAsm(fmt.Sprintf("LDY #$%02X", strHeapLoc))
+			addBytes([]byte{0xA2, 0x02}) // load X with 2 for addr Y printing
+			addAsm("LDX #$02")
+
 		} else if toPrint.Token.content == "KEYW_TRUE" {
 			addBytes([]byte{0xA0, 0x01}) // load Y with true
+			addAsm("LDY #$01")
 			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+			addAsm("LDX #$01")
+
 		} else if toPrint.Token.content == "KEYW_FALSE" {
 			addBytes([]byte{0xA0, 0x00}) // load Y with false
+			addAsm("LDY #$00")
 			addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+			addAsm("LDX #$01")
 		}
 
 	case "<Addition>":
 		generateAdd(node.Children[0]) // result is in accum
 		// we need to store it, no symbol ref to it though
-		var headlessPlaceholder *placeholder = &placeholder{[]int{}, nil, [2]byte{}}
+		var headlessPlaceholder *placeholder = &placeholder{[]int{}, []int{}, nil, [2]byte{}}
 		placeholders = append(placeholders, headlessPlaceholder)
 
 		headlessPlaceholder.locations = append(headlessPlaceholder.locations, curBytePtr+1)
 		addBytes([]byte{0x8D, 0x00, 0x00}) // store add result
+		headlessPlaceholder.asmLocations = append(headlessPlaceholder.asmLocations, len(curAsm)+4)
+		addAsm("STA _TEMP")
 
 		headlessPlaceholder.locations = append(headlessPlaceholder.locations, curBytePtr+1)
 		addBytes([]byte{0xAC, 0x00, 0x00}) // load stored result to Y
-		addBytes([]byte{0xA2, 0x01})       // load X with 1 for Y printing
+		headlessPlaceholder.asmLocations = append(headlessPlaceholder.asmLocations, len(curAsm)+4)
+		addAsm("LDY _TEMP")
+		addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
+		addAsm("LDX #$01")
 	}
 	addBytes([]byte{0xFF}) // print sys call
+	addAsm("SYS")
 }
 
 func backpatch() {
@@ -313,7 +353,14 @@ func backpatch() {
 			curMem[loc] = p.realAddr[1]
 			curMem[loc+1] = p.realAddr[0]
 		}
+
+		for _, loc := range p.asmLocations {
+			copy(curAsm[loc:], fmt.Sprintf("$%02X%02X", p.realAddr[0], p.realAddr[1]))
+		}
 	}
+	copyAsm := make([]byte, len(curAsm))
+	copy(copyAsm, curAsm)
+	asmList = append(asmList, copyAsm)
 }
 
 func generateIfWhile(node *Node) {
@@ -327,17 +374,21 @@ func generateIfWhile(node *Node) {
 	var curBytePos int = curBytePtr
 	var jumpPlacehold int = curBytePtr + 1
 	addBytes([]byte{0xD0, 0x00})
+	var asmJumpFill int = len(curAsm) + 5
+	addAsm("BNE $_J")
 
 	generateCode(block)
 	var afterBytePos int = curBytePtr
 
 	// calculate jump and backfill
 	curMem[jumpPlacehold] = byte(afterBytePos - curBytePos)
+	copy(curAsm[asmJumpFill:], fmt.Sprintf("%02X", byte(afterBytePos-curBytePos)))
 
 	if node.Type == "<WhileStatement>" {
 		var jumpDist byte = byte(afterBytePos - whileReturn)
 		var jumpVal byte = 0xFF - jumpDist // 2's comp
 		addBytes([]byte{0xD0, jumpVal})
+		addAsm(fmt.Sprintf("BNE $%02X", jumpVal))
 	}
 }
 
@@ -391,5 +442,5 @@ func GetAssembler(program int) string {
 		return fmt.Sprintf("No assembler generated due to %s error", errorMap[program])
 	}
 
-	return asmList[program].String()
+	return string(asmList[0])
 }
