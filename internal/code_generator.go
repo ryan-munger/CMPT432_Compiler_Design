@@ -65,7 +65,7 @@ func initMem(pNum int) {
 
 		// new assembler
 		var newAsm []byte
-		newAsm = append(newAsm, "6502 Assembler:\n"...)
+		newAsm = append(newAsm, "6502 Assembler:\n\t"...)
 		curAsm = newAsm
 	}
 }
@@ -144,7 +144,7 @@ func addBytes(newMem []byte) {
 }
 
 func addAsm(newAsm string) {
-	curAsm = append(curAsm, []byte(newAsm+" \n")...)
+	curAsm = append(curAsm, []byte(newAsm+" \n\t")...)
 }
 
 // type, id
