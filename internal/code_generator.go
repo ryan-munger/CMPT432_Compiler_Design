@@ -14,10 +14,12 @@ var (
 	curBytePtr    int    = 0
 	placeholders  []*placeholder
 	curScope      *SymbolTable
-	genErrors     int            = 0
-	endStackPtr   int            = 0
-	topHeapPtr    int            = 256
-	storedStrings map[string]int = make(map[string]int)
+	genErrors     int             = 0
+	endStackPtr   int             = 0
+	topHeapPtr    int             = 256
+	storedStrings map[string]int  = make(map[string]int)
+	usedScopes    map[string]bool = make(map[string]bool) // map just bc high lookups
+	firstTime     bool            = true                  // don't move down scope for block 0
 )
 
 type placeholder struct {
@@ -114,11 +116,17 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 func generateCode(node *Node) {
 	switch node.Type {
 	case "<Block>":
-		// go down a scope
+		if firstTime {
+			firstTime = false
+		} else {
+			scopeDown()
+		}
+
 		for _, child := range node.Children {
 			generateCode(child)
 		}
-		// go up a scope
+
+		scopeUp()
 
 	case "<VarDecl>":
 		generateVarDecl(node)
@@ -133,6 +141,26 @@ func generateCode(node *Node) {
 		for _, child := range node.Children {
 			generateCode(child)
 		}
+	}
+}
+
+func scopeDown() {
+	// once we go 'down' into a scope and back up from it,
+	// we can never go back 'down' into it
+	for _, downCandidate := range curScope.subTables {
+		// see if it has been used
+		if _, exists := usedScopes[downCandidate.scopeID]; !exists {
+			// if not used it is our new scope
+			// we do all this to determine which child to move down into
+			curScope = downCandidate
+		}
+	}
+}
+
+func scopeUp() {
+	// don't go up if we are the highest we can go
+	if curScope.scopeID != "0" {
+		curScope = curScope.parentTable
 	}
 }
 
@@ -209,8 +237,6 @@ func generateExpr(node *Node) {
 		} else if node.Token.content == "KEYW_FALSE" {
 			addBytes([]byte{0xA9, 0x00}) // load false to accum
 			addAsm("LDA #$00")
-		} else {
-			println("How is this possible" + node.Token.content)
 		}
 
 	case "<Addition>":

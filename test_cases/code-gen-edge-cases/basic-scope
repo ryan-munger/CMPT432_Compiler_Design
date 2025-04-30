@@ -1,0 +1,11 @@
+{
+  int a
+  a = 9
+  print(a)
+  {
+    string a
+    a = " other scope "
+    print(a)
+  }
+  print(a)
+} $
