@@ -16,7 +16,8 @@ var (
 	curScope      *SymbolTable
 	genErrors     int             = 0
 	endStackPtr   int             = 0
-	topHeapPtr    int             = 256
+	topHeapPtr    int             = 255                 // its really 254 as subtracts before access
+	boolMemAddr   [2]byte         = [2]byte{0xFF, 0x00} // we will use the last memory segment for comparison results
 	storedStrings map[string]int  = make(map[string]int)
 	usedScopes    map[string]bool = make(map[string]bool) // map just bc high lookups
 	firstTime     bool            = true                  // don't move down scope for block 0
@@ -419,7 +420,22 @@ func generateIfWhile(node *Node) {
 }
 
 func generateComparison(node *Node) {
+	if node.Type == "Token" { // T or F keyword
+		addBytes([]byte{0xA9, 0x01}) // load accum 1 (true)
+		addAsm("LDA #$01")
+		addBytes([]byte{0x8D, boolMemAddr[0], boolMemAddr[1]}) // store in reserved bool mem loc
+		addAsm("STA $00FF")
 
+		if node.Token.content == "KEYW_TRUE" {
+			addBytes([]byte{0xA2, 0x01}) // load X with 1
+			addAsm("LDX #$01")
+		} else if node.Token.content == "KEYW_FALSE" {
+			addBytes([]byte{0xA2, 0x00}) // load X with 0
+			addAsm("LDX #$00")
+		}
+		addBytes([]byte{0xEC, boolMemAddr[0], boolMemAddr[1]}) // compare X and booladdr to set Z
+		addAsm("CPX $00FF")
+	}
 }
 
 func addToHeap(str string) byte {
