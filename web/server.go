@@ -79,7 +79,7 @@ func StartServer(expose bool) {
 	})
 
 	// for machine code display box
-	r.GET("/getAssembler/:program", func(c *gin.Context) {
+	r.GET("/getAssembly/:program", func(c *gin.Context) {
 		programStr := c.Param("program")
 		program, err := strconv.Atoi(programStr)
 		if err != nil {
@@ -87,7 +87,7 @@ func StartServer(expose bool) {
 			return
 		}
 
-		machineCode := internal.GetAssembler(program)
+		machineCode := internal.GetAssembly(program)
 		c.String(http.StatusOK, machineCode)
 	})
 

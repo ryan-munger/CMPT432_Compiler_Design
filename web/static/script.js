@@ -186,12 +186,12 @@ function copyMachineCode() {
 }
 
 function updateMachineCodeBox() {
-    const viewMode = document.getElementById('machineViewType').value;  // "Machine Code" or "Assembler"
+    const viewMode = document.getElementById('machineViewType').value;  // "Machine Code" or "Assembly"
     const programNumber = document.getElementById('programCounter').value - 1; // backend index from 0 
 
     let endpoint = '';
-    if (viewMode === 'Assembler') {
-        endpoint = `/getAssembler/${programNumber}`;
+    if (viewMode === 'Assembly') {
+        endpoint = `/getAssembly/${programNumber}`;
     } else {
         endpoint = `/getMachineCode/${programNumber}`;
     }

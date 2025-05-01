@@ -65,9 +65,9 @@ func initMem(pNum int) {
 		memList = append(memList, &newMem)
 		curMem = &newMem
 
-		// new assembler
+		// new assembly
 		var newAsm []byte
-		newAsm = append(newAsm, "6502 Assembler:\n\t"...)
+		newAsm = append(newAsm, "6502 Assembly:\n\t"...)
 		curAsm = newAsm
 	}
 }
@@ -95,10 +95,10 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	backpatch()
 
 	if genErrors == 0 {
-		Pass(fmt.Sprintf("Successfully generated code and assembler for program %d with 0 errors.",
+		Pass(fmt.Sprintf("Successfully generated code and assembly for program %d with 0 errors.",
 			pNum+1), "CODE GENERATOR")
-		Info(fmt.Sprintf("Program %d Assembler:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
-			GetAssembler(pNum)), "GOPILER", true)
+		Info(fmt.Sprintf("Program %d Assembly:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
+			GetAssembly(pNum)), "GOPILER", true)
 		Info(fmt.Sprintf("Program %d 6502 Machine Code:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
 			GetMachineCode(pNum, true)), "GOPILER", true)
 	} else {
@@ -461,11 +461,11 @@ func GetMachineCode(program int, eightBreaks bool) string {
 	return strings.Join(hexString, " ")
 }
 
-func GetAssembler(program int) string {
+func GetAssembly(program int) string {
 	if program < 0 || program > len(asmList)-1 {
 		return "Invalid program number"
 	} else if len(memList) == 0 || hadError(program) {
-		return fmt.Sprintf("No assembler generated due to %s error", errorMap[program])
+		return fmt.Sprintf("No assembly generated due to %s error", errorMap[program])
 	}
 
 	return string(asmList[0])
