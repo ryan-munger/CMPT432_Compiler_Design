@@ -1,9 +1,9 @@
 {
+    if false {
+        print("noooo")
+    }
     if true {
         print("yay")
     }
-
-    if false {
-        print("cmon")
-    }
+    print(9) /* if this does not print we branched too far */
 } $

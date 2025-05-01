@@ -398,25 +398,29 @@ func generateIfWhile(node *Node) {
 	generateComparison(condition)
 
 	// prep jump
-	var curBytePos int = curBytePtr
 	var jumpPlacehold int = curBytePtr + 1
 	addBytes([]byte{0xD0, 0x00})
 	var asmJumpFill int = len(curAsm) + 5
 	addAsm("BNE $_J")
+	var beforeBytePos int = curBytePtr
 
 	generateCode(block)
-	var afterBytePos int = curBytePtr
 
-	// calculate jump and backfill
-	curMem[jumpPlacehold] = byte(afterBytePos - curBytePos)
-	copy(curAsm[asmJumpFill:], fmt.Sprintf("%02X", byte(afterBytePos-curBytePos)))
-
+	// whiles need to go back up
 	if node.Type == "<WhileStatement>" {
-		var jumpDist byte = byte(afterBytePos - whileReturn)
-		var jumpVal byte = 0xFF - jumpDist // 2's comp
+		// we need the Z to be 0 so we always branch back
+		generateComparison(&Node{Type: "Token", Token: &Token{content: "KEYW_FALSE"}})
+
+		var jumpDist byte = byte((curBytePtr + 2) - whileReturn) // (count the D0 and val coming)
+		var jumpVal byte = 0xFF - jumpDist + 1                   // 2's comp
 		addBytes([]byte{0xD0, jumpVal})
 		addAsm(fmt.Sprintf("BNE $%02X", jumpVal))
 	}
+
+	// calculate original jump to skip block and backfill
+	var afterBytePos int = curBytePtr
+	curMem[jumpPlacehold] = byte(afterBytePos - beforeBytePos)
+	copy(curAsm[asmJumpFill:], fmt.Sprintf("%02X", byte(afterBytePos-beforeBytePos)))
 }
 
 func generateComparison(node *Node) {

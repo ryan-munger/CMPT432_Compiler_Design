@@ -1,9 +1,6 @@
 {
-    boolean a
-    a = true
-    while (a == true) {
 
+    while true {
+        print(1)
     }
-
-    boolea b
 }$
