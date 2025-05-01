@@ -1,6 +1,11 @@
 {
+    while false { /* should not run */
+        print("false")
+    }
+    print(0)
 
     while true {
-        print(1)
+        print("true ")
     }
+    print(1)
 }$
