@@ -183,17 +183,21 @@ func generateVarDecl(node *Node) {
 	placeholders = append(placeholders, temp)
 
 	// we initialize bools and ints to 0
-	if node.Children[0].Type == "I_TYPE" || node.Children[0].Type == "B_TYPE" {
+	if node.Children[0].Token.content == "I_TYPE" || node.Children[0].Token.content == "B_TYPE" {
 		// load 0 to accum for init
 		addBytes([]byte{0xA9, 0x00})
 		addAsm("LDA #$00")
-
-		// store init value to address (temp 00s for now)
-		temp.locations = append(temp.locations, curBytePtr+1)
-		addBytes([]byte{0x8D, 0x00, 0x00})
-		temp.asmLocations = append(temp.asmLocations, len(curAsm)+4)
-		addAsm("STA _TEMP")
+	} else {
+		// init strings to instant break
+		// load last string heap addr (always a padded brk statement)
+		addBytes([]byte{0xA9, 0xFE})
+		addAsm("LDA #FE")
 	}
+	// store init value to address (temp 00s for now)
+	temp.locations = append(temp.locations, curBytePtr+1)
+	addBytes([]byte{0x8D, 0x00, 0x00})
+	temp.asmLocations = append(temp.asmLocations, len(curAsm)+4)
+	addAsm("STA _TEMP")
 }
 
 // id, expr
@@ -232,12 +236,8 @@ func generateExpr(node *Node) {
 			var strHeapLoc byte = addToHeap(node.Token.trueContent)
 			addBytes([]byte{0xA9, strHeapLoc})
 			addAsm(fmt.Sprintf("LDA $#%02X", strHeapLoc))
-		} else if node.Token.content == "KEYW_TRUE" {
-			addBytes([]byte{0xA9, 0x01}) // load true to accum
-			addAsm("LDA #$01")
-		} else if node.Token.content == "KEYW_FALSE" {
-			addBytes([]byte{0xA9, 0x00}) // load false to accum
-			addAsm("LDA #$00")
+		} else if node.Token.content == "KEYW_TRUE" || node.Token.content == "KEYW_FALSE" {
+			generateComparison(node)
 		}
 
 	case "<Addition>":
