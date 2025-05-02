@@ -115,7 +115,7 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 			GetMachineCode(pNum, true)), "GOPILER", true)
 	} else {
 		Fail(fmt.Sprintf("Code Generation for program %d failed with %d error(s) and %d warning(s).",
-			pNum+1, errorCount, warnCount), "CODE GENERATOR")
+			pNum+1, genErrors, genWarns), "CODE GENERATOR")
 		errorMap[pNum] = "code generation"
 		asmList[pNum] = []byte{}
 		Info(fmt.Sprintf("Compilation of program %d aborted due to code generation error(s).",
@@ -127,6 +127,9 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 }
 
 func generateCode(node *Node) {
+	if genErrors != 0 {
+		return
+	}
 	switch node.Type {
 	case "<Block>":
 		if firstTime {
@@ -178,6 +181,11 @@ func scopeUp() {
 }
 
 func addBytes(newMem []byte) {
+	if genErrors == 0 && curBytePtr+len(newMem) >= topHeapPtr {
+		Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
+		genErrors++
+		curBytePtr -= len(newMem) // just overwrite the end of existing so not out of bounds
+	}
 	for _, newByte := range newMem {
 		curMem[curBytePtr] = newByte
 		curBytePtr++
@@ -390,6 +398,10 @@ func backpatch() {
 	for _, p := range placeholders {
 		p.realAddr = [2]byte{0x00, byte(endStackPtr)}
 		endStackPtr += 2
+		if genErrors == 0 && endStackPtr >= topHeapPtr {
+			Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
+			genErrors++
+		}
 
 		for _, loc := range p.locations {
 			// little endian
@@ -539,6 +551,12 @@ func addToHeap(str string) byte {
 		curMem[topHeapPtr+i] = byte(char)
 	}
 	storedStrings[str] = topHeapPtr // remember we have it stored
+
+	if genErrors == 0 && topHeapPtr >= curBytePtr {
+		Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
+		genErrors++
+	}
+
 	return byte(topHeapPtr)
 }
 
