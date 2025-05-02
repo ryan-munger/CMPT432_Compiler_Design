@@ -437,6 +437,8 @@ func zFlagZero() {
 	addAsm("STA $00FF")
 	addBytes([]byte{0xA2, 0x00}) // load X with 0
 	addAsm("LDX #$00")
+	addBytes([]byte{0xEC, boolMemAddr[0], boolMemAddr[1]})
+	addAsm("CPX $00FF")
 }
 
 func generateComparison(node *Node) {
@@ -473,27 +475,37 @@ func generateComparison(node *Node) {
 		generateComparison(compRight)
 		addBytes([]byte{0x8D, boolMemAddr[0], boolMemAddr[1]}) // store in reserved bool mem loc
 		addAsm("STA $00FF")
+		addBytes([]byte{0xAE, boolMemAddr[0], boolMemAddr[1]}) /// move bool mem addr to X
+		addAsm("LDX $00FF")
 
-		// compare X to left temp to set Z
+		// compare X to leftAddr to set Z
 		leftPlaceholder.locations = append(leftPlaceholder.locations, curBytePtr+1)
 		addBytes([]byte{0xEC, 0x00, 0x00})
 		leftPlaceholder.asmLocations = append(leftPlaceholder.asmLocations, len(curAsm)+4)
 		addAsm("CPX _TEMP")
 
-		// branch if comparison is false (put a 0 in accum)
-		addBytes([]byte{0xD0, 0x04}) // branch past the load 1
-		addAsm("BNE $04")
+		var positiveOutcome int = 1
+		var negativeOutcome int = 0
+		if node.Type == "<Inequality>" { // comparison succeeds - we failed
+			positiveOutcome = 0
+			negativeOutcome = 1
+		}
 
-		// if true: load accum with 1
-		addBytes([]byte{0xA9, 0x01}) // true
-		addAsm("LDA #$01")
-		zFlagZero()                  // so we always branch
-		addBytes([]byte{0xD0, 0x02}) // skip the setting false
+		// branch if comparison is false to negative outcome
+		addBytes([]byte{0xD0, 0x05}) // branch past the loading of positive outcome
+		addAsm("BNE $05")
+
+		// positive outcome
+		zFlagZero() // so we always branch
+		// did Z flag first as to not overwrite result
+		addBytes([]byte{0xA9, byte(positiveOutcome)})
+		addAsm(fmt.Sprintf("LDA #$%2X", byte(positiveOutcome)))
+		addBytes([]byte{0xD0, 0x02}) // skip the negative outcome
 		addAsm("BNE $02")
 
-		// if false: accum 0
-		addBytes([]byte{0xA9, 0x00}) // false
-		addAsm("LDA #$00")
+		// negative outcome
+		addBytes([]byte{0xA9, byte(negativeOutcome)})
+		addAsm(fmt.Sprintf("LDA #$%2X", byte(negativeOutcome)))
 	}
 }
 
