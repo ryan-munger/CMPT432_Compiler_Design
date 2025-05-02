@@ -124,6 +124,14 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	// reset for next program
 	genErrors = 0
 	genWarns = 0
+	endStackPtr = 0
+	topHeapPtr = 255
+	curBytePtr = 0
+	placeholders = []*placeholder{}
+	curScope = nil
+	storedStrings = make(map[string]int)
+	usedScopes = make(map[string]bool)
+	firstTime = true
 }
 
 func generateCode(node *Node) {

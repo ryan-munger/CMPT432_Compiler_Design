@@ -142,6 +142,22 @@ func ResetAll() {
 	errorMap = make(map[int]string)
 
 	printTreeBuffer = ""
+
+	memList = []*([256]byte){}
+	curMem = &([256]byte{}) // New array of 256 bytes, all initialized to 0x00
+	asmList = [][]byte{}
+	curAsm = []byte{}
+	curBytePtr = 0
+	placeholders = []*placeholder{}
+	curScope = nil
+	genErrors = 0
+	genWarns = 0
+	endStackPtr = 0
+	topHeapPtr = 255
+	boolMemAddr = [2]byte{0xFF, 0x00}
+	storedStrings = make(map[string]int)
+	usedScopes = make(map[string]bool)
+	firstTime = true
 }
 
 func CreateFailedProgramVars(pNum int, failPoint string) {
