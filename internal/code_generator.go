@@ -189,10 +189,12 @@ func scopeUp() {
 }
 
 func addBytes(newMem []byte) {
-	if genErrors == 0 && curBytePtr+len(newMem) >= topHeapPtr {
-		Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
-		genErrors++
+	if curBytePtr+len(newMem) >= topHeapPtr {
 		curBytePtr -= len(newMem) // just overwrite the end of existing so not out of bounds
+		if genErrors == 0 {
+			Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
+			genErrors++
+		}
 	}
 	for _, newByte := range newMem {
 		curMem[curBytePtr] = newByte
