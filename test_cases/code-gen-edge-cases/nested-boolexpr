@@ -1,0 +1,4 @@
+{
+  print((true == (true != (false == true)))) /* true */
+  print((true != (true != (false == true)))) /* false */
+} $
