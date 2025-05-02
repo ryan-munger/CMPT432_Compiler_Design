@@ -17,6 +17,6 @@
   c = "hi"
   d = c 
   if (c == d) {
-    print("same string")
+    print("same string ")
   }
 } $

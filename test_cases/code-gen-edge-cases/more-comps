@@ -1,0 +1,15 @@
+{ 
+  string a 
+  a = "same"
+  if (a == "same") {
+    print("same")
+  }
+  
+  if (3 != 5) {
+    print("dig")
+  }
+
+  if (3 == 3) {
+    print("dig")
+  }
+} $

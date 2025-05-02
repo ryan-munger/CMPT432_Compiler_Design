@@ -497,7 +497,10 @@ func generateComparison(node *Node) {
 		return
 	}
 
-	if node.Type == "<Equality>" || node.Type == "<Inequality>" {
+	if node.Type == "<Addition>" {
+		// result goes in accum
+		generateAdd(node)
+	} else if node.Type == "<Equality>" || node.Type == "<Inequality>" {
 		var compLeft *Node = node.Children[0]
 		var compRight *Node = node.Children[1]
 
