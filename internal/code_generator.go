@@ -400,6 +400,10 @@ func generateIfWhile(node *Node) {
 	var condition *Node = node.Children[0]
 	var block *Node = node.Children[1]
 	generateComparison(condition)
+	addBytes([]byte{0x8D, boolMemAddr[0], boolMemAddr[1]}) // move result of boolexpr to bool addr
+	addAsm("STA $00FF")
+	addBytes([]byte{0xA2, 0x01}) // load X with 1 (true)
+	addAsm("LDX #$01")
 	addBytes([]byte{0xEC, boolMemAddr[0], boolMemAddr[1]}) // compare X and booladdr to set Z
 	addAsm("CPX $00FF")
 
