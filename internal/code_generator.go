@@ -38,8 +38,6 @@ func newPlaceholder(node *Node) *placeholder {
 // takes in an ID
 func addPlaceholderLocation(node *Node, loc int, asmLoc int) {
 	var symbol *SymbolEntry = lookupSymbol(node.Token.trueContent)
-	println(symbol.dataType)
-	println(curScope.scopeID)
 	for _, p := range placeholders {
 		if p.symbol == symbol {
 			p.locations = append(p.locations, loc)
@@ -355,7 +353,7 @@ func generatePrint(node *Node) {
 		}
 
 	case "<Addition>", "<Equality>", "<Inequality>": // results are in accum
-		if node.Type == "<Addition>" {
+		if toPrint.Type == "<Addition>" {
 			generateAdd(node.Children[0])
 		} else {
 			generateComparison(node.Children[0])

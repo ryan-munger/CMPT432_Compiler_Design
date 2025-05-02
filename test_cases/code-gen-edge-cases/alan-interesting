@@ -1,3 +1,4 @@
+/* Odd case: symbol table is aware of string a in that block, so code gen sets the string's address to 5!*/
 {
   int a
   {
