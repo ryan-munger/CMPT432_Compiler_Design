@@ -1,0 +1,8 @@
+{
+  int a
+  boolean b
+  string s
+  print(a)
+  print(b)
+  print(s)
+} $

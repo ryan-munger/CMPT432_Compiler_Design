@@ -38,12 +38,21 @@ func newPlaceholder(node *Node) *placeholder {
 // takes in an ID
 func addPlaceholderLocation(node *Node, loc int, asmLoc int) {
 	var symbol *SymbolEntry = lookupSymbol(node.Token.trueContent)
+	println(symbol.dataType)
+	println(curScope.scopeID)
 	for _, p := range placeholders {
 		if p.symbol == symbol {
 			p.locations = append(p.locations, loc)
 			p.asmLocations = append(p.asmLocations, asmLoc)
+			return
 		}
 	}
+	// placeholder was not found
+	// this happens SPECIFICALLY when var is redecl in a scope,
+	// but is being assigned before that new decl. Scope table knows, we don't!
+	var newPlaceholder *placeholder = newPlaceholder(node)
+	placeholders = append(placeholders, newPlaceholder)
+	addPlaceholderLocation(node, loc, asmLoc)
 }
 
 // will always exist (thanks semantic analysis)
