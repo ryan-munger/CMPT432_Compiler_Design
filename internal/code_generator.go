@@ -474,9 +474,20 @@ func generateComparison(node *Node) {
 		if node.Token.content == "KEYW_TRUE" {
 			addBytes([]byte{0xA9, 0x01}) // load 1 to accum
 			addAsm("LDA #$01")
+
 		} else if node.Token.content == "KEYW_FALSE" {
 			addBytes([]byte{0xA9, 0x00}) // load 0 to accum
 			addAsm("LDA #$00")
+
+		} else if node.Token.tType == Digit {
+			addBytes([]byte{0xA9, strIntToByte(node.Token.trueContent)})
+			addAsm(fmt.Sprintf("LDA #$%2X", strIntToByte(node.Token.trueContent)))
+
+		} else if node.Token.content == "STRING" {
+			var strHeapLoc byte = addToHeap(node.Token.trueContent)
+			addBytes([]byte{0xA9, strHeapLoc})
+			addAsm(fmt.Sprintf("LDA $#%02X", strHeapLoc))
+
 		} else {
 			// user var
 			addPlaceholderLocation(node, curBytePtr+1, len(curAsm)+4)
@@ -552,7 +563,7 @@ func addToHeap(str string) byte {
 	}
 	storedStrings[str] = topHeapPtr // remember we have it stored
 
-	if genErrors == 0 && topHeapPtr >= curBytePtr {
+	if genErrors == 0 && topHeapPtr <= curBytePtr {
 		Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
 		genErrors++
 	}

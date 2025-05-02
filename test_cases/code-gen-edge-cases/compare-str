@@ -1,0 +1,22 @@
+{
+  if ("a" == "a") {
+    print("true ")
+  }
+
+  string a
+  string b
+  a = "same"
+  b = "same"
+
+  if (a == b) {
+    print("same string ")
+  }
+
+  string c 
+  string d 
+  c = "hi"
+  d = c 
+  if (c == d) {
+    print("same string")
+  }
+} $

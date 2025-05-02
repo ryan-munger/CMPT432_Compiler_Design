@@ -21,7 +21,4 @@ while true {
 print(" this will always be true hahahahahahaha")
 }
 
-if false {
-print("this")
-}
 } $
