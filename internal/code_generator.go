@@ -503,8 +503,8 @@ func generateComparison(node *Node) {
 		}
 
 		// branch if comparison is false to negative outcome
-		addBytes([]byte{0xD0, 0x05}) // branch past the loading of positive outcome
-		addAsm("BNE $05")
+		addBytes([]byte{0xD0, 0x0E}) // branch past the loading of positive outcome
+		addAsm("BNE $0E")
 
 		// positive outcome
 		zFlagZero() // so we always branch
