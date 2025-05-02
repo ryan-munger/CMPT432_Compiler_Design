@@ -243,10 +243,8 @@ func generateExpr(node *Node) {
 	case "<Addition>":
 		generateAdd(node)
 
-	case "<Inequality>":
+	case "<Equality>", "<Inequality>":
 		generateComparison(node)
-
-	case "<Equality>":
 	}
 }
 
@@ -347,8 +345,13 @@ func generatePrint(node *Node) {
 			addAsm("LDX #$01")
 		}
 
-	case "<Addition>":
-		generateAdd(node.Children[0]) // result is in accum
+	case "<Addition>", "<Equality>", "<Inequality>": // results are in accum
+		if node.Type == "<Addition>" {
+			generateAdd(node.Children[0])
+		} else {
+			generateComparison(node.Children[0])
+		}
+
 		// we need to store it, no symbol ref to it though
 		var headlessPlaceholder *placeholder = &placeholder{[]int{}, []int{}, nil, [2]byte{}}
 		placeholders = append(placeholders, headlessPlaceholder)
@@ -365,6 +368,7 @@ func generatePrint(node *Node) {
 		addBytes([]byte{0xA2, 0x01}) // load X with 1 for Y printing
 		addAsm("LDX #$01")
 	}
+
 	addBytes([]byte{0xFF}) // print sys call
 	addAsm("SYS")
 }
@@ -396,6 +400,8 @@ func generateIfWhile(node *Node) {
 	var condition *Node = node.Children[0]
 	var block *Node = node.Children[1]
 	generateComparison(condition)
+	addBytes([]byte{0xEC, boolMemAddr[0], boolMemAddr[1]}) // compare X and booladdr to set Z
+	addAsm("CPX $00FF")
 
 	// prep jump
 	var jumpPlacehold int = curBytePtr + 1
@@ -409,7 +415,7 @@ func generateIfWhile(node *Node) {
 	// whiles need to go back up
 	if node.Type == "<WhileStatement>" {
 		// we need the Z to be 0 so we always branch back
-		generateComparison(&Node{Type: "Token", Token: &Token{content: "KEYW_FALSE"}})
+		zFlagZero()
 
 		var jumpDist byte = byte((curBytePtr + 2) - whileReturn) // (count the D0 and val coming)
 		var jumpVal byte = 0xFF - jumpDist + 1                   // 2's comp
@@ -423,22 +429,71 @@ func generateIfWhile(node *Node) {
 	copy(curAsm[asmJumpFill:], fmt.Sprintf("%02X", byte(afterBytePos-beforeBytePos)))
 }
 
+// sets the z flag to 0
+func zFlagZero() {
+	addBytes([]byte{0xA9, 0x01}) // load accum 1 (true)
+	addAsm("LDA #$01")
+	addBytes([]byte{0x8D, boolMemAddr[0], boolMemAddr[1]}) // store in reserved bool mem loc
+	addAsm("STA $00FF")
+	addBytes([]byte{0xA2, 0x00}) // load X with 0
+	addAsm("LDX #$00")
+}
+
 func generateComparison(node *Node) {
-	if node.Type == "Token" { // T or F keyword
-		addBytes([]byte{0xA9, 0x01}) // load accum 1 (true)
-		addAsm("LDA #$01")
+	if node.Type == "Token" {
+		if node.Token.content == "KEYW_TRUE" {
+			addBytes([]byte{0xA9, 0x01}) // load 1 to accum
+			addAsm("LDA #$01")
+		} else if node.Token.content == "KEYW_FALSE" {
+			addBytes([]byte{0xA9, 0x00}) // load 0 to accum
+			addAsm("LDA #$00")
+		} else {
+			// user var
+			addPlaceholderLocation(node, curBytePtr+1, len(curAsm)+4)
+			addBytes([]byte{0xAD, 0x00, 0x00}) // load accum from mem
+			addAsm("LDA _TEMP")
+		}
+		return
+	}
+
+	if node.Type == "<Equality>" || node.Type == "<Inequality>" {
+		var compLeft *Node = node.Children[0]
+		var compRight *Node = node.Children[1]
+
+		// generate left and store result
+		generateComparison(compLeft)
+		var leftPlaceholder *placeholder = &placeholder{[]int{}, []int{}, nil, [2]byte{}}
+		placeholders = append(placeholders, leftPlaceholder)
+		leftPlaceholder.locations = append(leftPlaceholder.locations, curBytePtr+1)
+		addBytes([]byte{0x8D, 0x00, 0x00}) // store accum to temp
+		leftPlaceholder.asmLocations = append(leftPlaceholder.asmLocations, len(curAsm)+4)
+		addAsm("STA _TEMP")
+
+		// generate right and load into X (store in reserved bool spot first)
+		generateComparison(compRight)
 		addBytes([]byte{0x8D, boolMemAddr[0], boolMemAddr[1]}) // store in reserved bool mem loc
 		addAsm("STA $00FF")
 
-		if node.Token.content == "KEYW_TRUE" {
-			addBytes([]byte{0xA2, 0x01}) // load X with 1
-			addAsm("LDX #$01")
-		} else if node.Token.content == "KEYW_FALSE" {
-			addBytes([]byte{0xA2, 0x00}) // load X with 0
-			addAsm("LDX #$00")
-		}
-		addBytes([]byte{0xEC, boolMemAddr[0], boolMemAddr[1]}) // compare X and booladdr to set Z
-		addAsm("CPX $00FF")
+		// compare X to left temp to set Z
+		leftPlaceholder.locations = append(leftPlaceholder.locations, curBytePtr+1)
+		addBytes([]byte{0xEC, 0x00, 0x00})
+		leftPlaceholder.asmLocations = append(leftPlaceholder.asmLocations, len(curAsm)+4)
+		addAsm("CPX _TEMP")
+
+		// branch if comparison is false (put a 0 in accum)
+		addBytes([]byte{0xD0, 0x04}) // branch past the load 1
+		addAsm("BNE $04")
+
+		// if true: load accum with 1
+		addBytes([]byte{0xA9, 0x01}) // true
+		addAsm("LDA #$01")
+		zFlagZero()                  // so we always branch
+		addBytes([]byte{0xD0, 0x02}) // skip the setting false
+		addAsm("BNE $02")
+
+		// if false: accum 0
+		addBytes([]byte{0xA9, 0x00}) // false
+		addAsm("LDA #$00")
 	}
 }
 
