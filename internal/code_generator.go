@@ -15,6 +15,7 @@ var (
 	placeholders  []*placeholder
 	curScope      *SymbolTable
 	genErrors     int             = 0
+	genWarns      int             = 0
 	endStackPtr   int             = 0
 	topHeapPtr    int             = 255                 // its really 254 as subtracts before access
 	boolMemAddr   [2]byte         = [2]byte{0xFF, 0x00} // we will use the last memory segment for comparison results
@@ -48,6 +49,9 @@ func addPlaceholderLocation(node *Node, loc int, asmLoc int) {
 	// placeholder was not found
 	// this happens SPECIFICALLY when var is redecl in a scope,
 	// but is being assigned before that new decl. Scope table knows, we don't!
+	Warn(fmt.Sprintf("!!! The usage of symbol %s in scope %s at (%d:%d) is referencing the redeclaration in this scope even before the redeclaration statement !!!",
+		symbol.name, curScope.scopeID, node.Token.location.line, node.Token.location.startPos), "CODE GENERATOR")
+	genWarns++
 	var newPlaceholder *placeholder = newPlaceholder(node)
 	placeholders = append(placeholders, newPlaceholder)
 	addPlaceholderLocation(node, loc, asmLoc)
@@ -103,15 +107,15 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	backpatch()
 
 	if genErrors == 0 {
-		Pass(fmt.Sprintf("Successfully generated code and assembly for program %d with 0 errors.",
-			pNum+1), "CODE GENERATOR")
+		Pass(fmt.Sprintf("Successfully generated code and assembly for program %d with 0 errors and %d warning(s).",
+			pNum+1, genWarns), "CODE GENERATOR")
 		Info(fmt.Sprintf("Program %d Assembly:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
 			GetAssembly(pNum)), "GOPILER", true)
 		Info(fmt.Sprintf("Program %d 6502 Machine Code:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
 			GetMachineCode(pNum, true)), "GOPILER", true)
 	} else {
-		Fail(fmt.Sprintf("Code Generation for program %d failed with %d error(s).",
-			pNum+1, errorCount), "CODE GENERATOR")
+		Fail(fmt.Sprintf("Code Generation for program %d failed with %d error(s) and %d warning(s).",
+			pNum+1, errorCount, warnCount), "CODE GENERATOR")
 		errorMap[pNum] = "code generation"
 		asmList[pNum] = []byte{}
 		Info(fmt.Sprintf("Compilation of program %d aborted due to code generation error(s).",
@@ -119,6 +123,7 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	}
 	// reset for next program
 	genErrors = 0
+	genWarns = 0
 }
 
 func generateCode(node *Node) {
