@@ -145,7 +145,7 @@ func ResetAll() {
 
 	memList = []*([256]byte){}
 	curMem = &([256]byte{}) // New array of 256 bytes, all initialized to 0x00
-	asmList = [][]byte{}
+	asmList = []*[]byte{}
 	curAsm = []byte{}
 	curBytePtr = 0
 	placeholders = []*placeholder{}

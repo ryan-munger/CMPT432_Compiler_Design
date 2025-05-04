@@ -9,7 +9,7 @@ import (
 var (
 	memList       []*[256]byte
 	curMem        *[256]byte // Array of 256 bytes, all init to 0x00
-	asmList       [][]byte
+	asmList       []*[]byte
 	curAsm        []byte // so we can update it from indices later
 	curBytePtr    int    = 0
 	placeholders  []*placeholder
@@ -78,9 +78,8 @@ func initMem(pNum int) {
 		curMem = &newMem
 
 		// new assembly
-		var newAsm []byte
-		newAsm = append(newAsm, "6502 Assembly:\n\t"...)
-		curAsm = newAsm
+		curAsm = []byte{}
+		curAsm = append(curAsm, "6502 Assembly:\n\t"...)
 	}
 }
 
@@ -107,17 +106,17 @@ func CodeGeneration(ast *TokenTree, symbolTableTree *SymbolTableTree, pNum int) 
 	backpatch()
 
 	if genErrors == 0 {
-		Pass(fmt.Sprintf("Successfully generated code and assembly for program %d with 0 errors and %d warning(s).",
+		Pass(fmt.Sprintf("Successfully generated machine code and assembly for program %d with 0 errors and %d warning(s).",
 			pNum+1, genWarns), "CODE GENERATOR")
 		Info(fmt.Sprintf("Program %d Assembly:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
-			GetAssembly(pNum)), "GOPILER", true)
+			string(curAsm)), "GOPILER", true)
 		Info(fmt.Sprintf("Program %d 6502 Machine Code:\n%s\n%s", pNum+1, strings.Repeat("-", 75),
 			GetMachineCode(pNum, true)), "GOPILER", true)
 	} else {
 		Fail(fmt.Sprintf("Code Generation for program %d failed with %d error(s) and %d warning(s).",
 			pNum+1, genErrors, genWarns), "CODE GENERATOR")
 		errorMap[pNum] = "code generation"
-		asmList[pNum] = []byte{}
+		asmList[pNum] = &[]byte{}
 		Info(fmt.Sprintf("Compilation of program %d aborted due to code generation error(s).",
 			pNum+1), "GOPILER", false)
 	}
@@ -425,7 +424,7 @@ func backpatch() {
 	}
 	copyAsm := make([]byte, len(curAsm))
 	copy(copyAsm, curAsm)
-	asmList = append(asmList, copyAsm)
+	asmList = append(asmList, &copyAsm)
 }
 
 func generateIfWhile(node *Node) {
@@ -490,8 +489,9 @@ func generateComparison(node *Node) {
 			addAsm("LDA #$00")
 
 		} else if node.Token.tType == Digit {
-			addBytes([]byte{0xA9, strIntToByte(node.Token.trueContent)})
-			addAsm(fmt.Sprintf("LDA #$%2X", strIntToByte(node.Token.trueContent)))
+			var b byte = strIntToByte(node.Token.trueContent)
+			addBytes([]byte{0xA9, b})
+			addAsm(fmt.Sprintf("LDA #$%02X", b))
 
 		} else if node.Token.content == "STRING" {
 			var strHeapLoc byte = addToHeap(node.Token.trueContent)
@@ -551,13 +551,13 @@ func generateComparison(node *Node) {
 		zFlagZero() // so we always branch
 		// did Z flag first as to not overwrite result
 		addBytes([]byte{0xA9, byte(positiveOutcome)})
-		addAsm(fmt.Sprintf("LDA #$%2X", byte(positiveOutcome)))
+		addAsm(fmt.Sprintf("LDA #$%02X", uint8(positiveOutcome)))
 		addBytes([]byte{0xD0, 0x02}) // skip the negative outcome
 		addAsm("BNE $02")
 
 		// negative outcome
 		addBytes([]byte{0xA9, byte(negativeOutcome)})
-		addAsm(fmt.Sprintf("LDA #$%2X", byte(negativeOutcome)))
+		addAsm(fmt.Sprintf("LDA #$%02X", uint8(negativeOutcome)))
 	}
 }
 
@@ -613,5 +613,5 @@ func GetAssembly(program int) string {
 		return fmt.Sprintf("No assembly generated due to %s error", errorMap[program])
 	}
 
-	return string(asmList[0])
+	return string(*asmList[program])
 }
