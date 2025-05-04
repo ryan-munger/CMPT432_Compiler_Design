@@ -1,20 +1,18 @@
 {
-    string z
-    z = "bond"
+    string b
+    b = "bond "
     string j
-    j = "james"
+    j = "james "
     int i
     i = 0
-    while(i != 3){
-        if(i == 0){
-            print(j)
-        }
-        if(i == 1) {
-            print(z)
-        }
-        if(i == 2){
-            print(j)
+    while(i != 2){
+        print(j)
+        if(i == 0) {
+            print(b)
         }
         i = 1 + i
     }
+    print(0)
+    print(0)
+    print(1+2+3+1)
 }$

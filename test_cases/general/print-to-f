@@ -1,0 +1,16 @@
+{
+    int a 
+    a = 0
+    int i
+    i = 0
+    int b
+    while (i != 8) {
+        b = 0
+        while (b != 2) {
+            print(a)
+            a = 1 + a
+            b = 1 + b
+        }
+        i = 1 + i
+    }
+} $
