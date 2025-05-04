@@ -406,7 +406,7 @@ func backpatch() {
 	endStackPtr = curBytePtr
 	for _, p := range placeholders {
 		p.realAddr = [2]byte{0x00, byte(endStackPtr)}
-		endStackPtr += 2
+		endStackPtr++
 		if genErrors == 0 && endStackPtr >= topHeapPtr {
 			Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
 			genErrors++
