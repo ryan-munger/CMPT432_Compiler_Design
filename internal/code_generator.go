@@ -407,19 +407,21 @@ func backpatch() {
 	for _, p := range placeholders {
 		p.realAddr = [2]byte{0x00, byte(endStackPtr)}
 		endStackPtr++
-		if genErrors == 0 && endStackPtr >= topHeapPtr {
-			Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
-			genErrors++
-		}
+		if endStackPtr >= topHeapPtr {
+			if genErrors == 0 {
+				Error("Memory size exceeded (256 Bytes)", "CODE GENERATOR")
+				genErrors++
+			}
+		} else {
+			for _, loc := range p.locations {
+				// little endian
+				curMem[loc] = p.realAddr[1]
+				curMem[loc+1] = p.realAddr[0]
+			}
 
-		for _, loc := range p.locations {
-			// little endian
-			curMem[loc] = p.realAddr[1]
-			curMem[loc+1] = p.realAddr[0]
-		}
-
-		for _, loc := range p.asmLocations {
-			copy(curAsm[loc:], fmt.Sprintf("$%02X%02X", p.realAddr[0], p.realAddr[1]))
+			for _, loc := range p.asmLocations {
+				copy(curAsm[loc:], fmt.Sprintf("$%02X%02X", p.realAddr[0], p.realAddr[1]))
+			}
 		}
 	}
 	copyAsm := make([]byte, len(curAsm))
